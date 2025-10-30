@@ -1,0 +1,5 @@
+{
+  "name": "Safari",
+  "description": "An AI-powered travel planner that creates detailed itineraries based on your destination, dates, and budget. Get flight, accommodation, and activity suggestions in seconds.",
+  "requestFramePermissions": []
+}
