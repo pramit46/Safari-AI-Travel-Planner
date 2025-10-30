@@ -4,6 +4,7 @@ import ItineraryDisplay from './components/ItineraryDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
 import { ItineraryResponse } from './types';
 import { generateItinerary } from './services/geminiService';
+import EmptyState from './components/EmptyState';
 
 const App: React.FC = () => {
     const [userInput, setUserInput] = useState<string>('');
@@ -81,7 +82,7 @@ const App: React.FC = () => {
                 <main className="max-w-4xl mx-auto flex flex-col items-center space-y-8">
                     <header className="text-center w-full">
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
-                            <span className="text-white">Gemini</span>
+                            <span className="text-white">Safari</span>
                             <span className="text-cyan-400"> Trip Planner</span>
                         </h1>
                         <p className="mt-4 text-lg text-slate-300">
@@ -110,9 +111,7 @@ const App: React.FC = () => {
                             <ItineraryDisplay itineraryData={itinerary.itineraries[0]} />
                         )}
                         {!isLoading && !error && !itinerary && (
-                            <div className="text-center text-slate-500 py-16">
-                                <p>Ready to explore? Tell me where you want to go!</p>
-                            </div>
+                            <EmptyState />
                         )}
                     </div>
                 </main>
