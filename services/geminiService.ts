@@ -14,6 +14,9 @@ const responseSchema = {
                 properties: {
                     title: { type: Type.STRING, description: "A catchy title for the itinerary." },
                     totalEstimatedCost: { type: Type.NUMBER, description: "Total estimated cost for the trip in USD." },
+                    weatherInfo: { type: Type.STRING, description: "A summary of the expected weather conditions (e.g., temperature range, chance of rain) for the destination during the travel dates." },
+                    clothingSuggestions: { type: Type.STRING, description: "Recommendations for clothing suitable for the weather and planned activities." },
+                    travelWarnings: { type: Type.STRING, description: "Any important travel advisories, safety warnings, or potential hazards (e.g., political unrest, health risks, weather alerts) for the destination. If none, state 'No major warnings at this time.'." },
                     flights: {
                         type: Type.OBJECT,
                         properties: {
@@ -96,7 +99,7 @@ export const generateItinerary = async (prompt: string): Promise<ItineraryRespon
             model: 'gemini-2.5-pro',
             contents: `Generate a complete travel plan for the following request: ${prompt}`,
             config: {
-                systemInstruction: "You are an expert AI travel agent. Your goal is to generate a complete and detailed travel itinerary based on the user's request. You MUST adhere strictly to the provided JSON schema and fill out ALL fields, including flights, accommodation, and a comprehensive daily plan. Do not leave any sections empty. If you cannot find specific real-time data (like a flight number or a specific hotel), use realistic and plausible placeholders (e.g., 'Budget Airline', 'City Center Hotel'). Be creative and provide rich descriptions and details for all activities. The user's budget is a critical constraint.",
+                systemInstruction: "You are an expert AI travel agent. Your goal is to generate a complete and detailed travel itinerary based on the user's request. You MUST adhere strictly to the provided JSON schema and fill out ALL fields, including flights, accommodation, and a comprehensive daily plan. Do not leave any sections empty. If you cannot find specific real-time data (like a flight number or a specific hotel), use realistic and plausible placeholders (e.g., 'Budget Airline', 'City Center Hotel'). Be creative and provide rich descriptions and details for all activities. The user's budget is a critical constraint. Crucially, you must also provide a summary of the expected weather, suggest appropriate clothing, and list any potential travel warnings or advisories for the destination during the specified dates.",
                 responseMimeType: "application/json",
                 responseSchema: responseSchema,
                 thinkingConfig: { thinkingBudget: 8192 },

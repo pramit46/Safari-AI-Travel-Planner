@@ -54,3 +54,23 @@ export const DownloadIcon = ({ className = 'w-5 h-5' }: { className?: string }) 
       <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
     </svg>
 );
+
+export const WeatherIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M11.25 10.193V5.034a.75.75 0 0 1 1.5 0v5.159a2.25 2.25 0 1 0-1.5 0Z" />
+      <path fillRule="evenodd" d="M12 2.25a.75.75 0 0 1 .75.75v2.25a.75.75 0 0 1-1.5 0V3a.75.75 0 0 1 .75-.75ZM6.31 6.31a.75.75 0 0 1 1.06 0l1.591 1.591a.75.75 0 1 1-1.06 1.06L6.31 7.37a.75.75 0 0 1 0-1.06Zm12.758 1.06a.75.75 0 0 1-1.06-1.06l-1.591 1.591a.75.75 0 1 1-1.06 1.06l1.59-1.59a.75.75 0 0 1 1.06 0ZM5.25 12a.75.75 0 0 1 .75-.75h2.25a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1-.75-.75Zm12.75 0a.75.75 0 0 1 .75-.75h2.25a.75.75 0 0 1 0 1.5H18a.75.75 0 0 1-.75-.75ZM12 6.562c-1.636 0-3.18.523-4.493 1.481A5.25 5.25 0 0 0 2.25 12.75c0 2.9 2.35 5.25 5.25 5.25h10.5A4.5 4.5 0 0 0 22.5 13.5c0-2.31-1.782-4.223-4.068-4.453A6.743 6.743 0 0 0 12 6.562Z" clipRule="evenodd" />
+    </svg>
+);
+
+export const ClothingIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M16.5 1.5a1.5 1.5 0 0 1 1.415 1.025L21 10.5v10.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 21V10.5l3.085-7.975A1.5 1.5 0 0 1 7.5 1.5h9Z" />
+      <path d="M8.25 4.5a.75.75 0 0 0-1.5 0v.158a.75.75 0 0 0 1.5 0V4.5Zm3.75 0a.75.75 0 0 0-1.5 0v.158a.75.75 0 0 0 1.5 0V4.5Zm3.75 0a.75.75 0 0 0-1.5 0v.158a.75.75 0 0 0 1.5 0V4.5Z" />
+    </svg>
+);
+
+export const WarningIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
+    </svg>
+);

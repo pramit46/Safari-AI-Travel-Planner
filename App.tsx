@@ -1,121 +1,104 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ItineraryOption } from './types';
+import { generateItinerary } from './services/geminiService';
 import TripInput from './components/TripInput';
 import ItineraryDisplay from './components/ItineraryDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
-import { ItineraryResponse } from './types';
-import { generateItinerary } from './services/geminiService';
 import EmptyState from './components/EmptyState';
+import TripSuggestions from './components/TripSuggestions';
 
 const App: React.FC = () => {
-    const [userInput, setUserInput] = useState<string>('');
-    const [itinerary, setItinerary] = useState<ItineraryResponse | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [prompt, setPrompt] = useState('');
+    const [itinerary, setItinerary] = useState<ItineraryOption | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [loadingMessage, setLoadingMessage] = useState<string>("Crafting your perfect journey...");
-    const intervalRef = useRef<number | null>(null);
+    const [loadingStatus, setLoadingStatus] = useState('');
 
-    const agentStatuses = [
-        "Initializing agents...",
-        "Flight agent is searching for tickets...",
-        "Accommodation agent is finding hotels...",
-        "Activity agent is scouting sights & eateries...",
-        "Planner agent is building your itinerary...",
+    const loadingMessages = [
+        "Contacting our AI travel agent...",
+        "Planning your flights and accommodation...",
+        "Crafting your daily activities...",
+        "Finalizing your personalized itinerary...",
+        "Just a moment longer, adventure awaits!"
     ];
 
     useEffect(() => {
+        let interval: NodeJS.Timeout | undefined;
+        if (isLoading) {
+            setLoadingStatus(loadingMessages[0]);
+            let i = 1;
+            interval = setInterval(() => {
+                setLoadingStatus(loadingMessages[i % loadingMessages.length]);
+                i++;
+            }, 3000);
+        }
         return () => {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
+            if (interval) {
+                clearInterval(interval);
             }
         };
-    }, []);
+    }, [isLoading]);
 
-    const handleSubmit = async () => {
-        if (!userInput.trim() || isLoading) return;
-
+    const handleSubmit = async (currentPrompt: string) => {
+        if (!currentPrompt.trim()) return;
         setIsLoading(true);
         setError(null);
         setItinerary(null);
-
-        let statusIndex = 0;
-        setLoadingMessage(agentStatuses[0]);
-        intervalRef.current = window.setInterval(() => {
-            statusIndex++;
-            setLoadingMessage(agentStatuses[statusIndex % agentStatuses.length]);
-        }, 2500);
-
         try {
-            const result = await generateItinerary(userInput);
+            const result = await generateItinerary(currentPrompt);
             if (result.itineraries && result.itineraries.length > 0) {
-                setItinerary(result);
+                setItinerary(result.itineraries[0]);
             } else {
-                setError("Sorry, I couldn't generate an itinerary for that request. Please try being more specific.");
+                setError("Sorry, we couldn't generate an itinerary for that request. Please try being more specific.");
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred.");
-        } finally {
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
+            if (err instanceof Error) {
+                setError(err.message);
+            } else {
+                setError("An unexpected error occurred. Please try again.");
             }
+        } finally {
             setIsLoading(false);
         }
     };
 
+    const handleSuggestionClick = (suggestion: string) => {
+        setPrompt(suggestion);
+        handleSubmit(suggestion);
+    };
+
     return (
-        <div className="min-h-screen font-sans text-slate-200">
-            <div className="min-h-screen bg-slate-900/70 backdrop-blur-sm p-4 sm:p-6 lg:p-8">
-                <style>
-                    {`
-                    @keyframes fade-in {
-                        from { opacity: 0; transform: translateY(10px); }
-                        to { opacity: 1; transform: translateY(0); }
-                    }
-                    .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
-
-                    @keyframes fade-in-down {
-                        from { opacity: 0; transform: translateY(-10px); }
-                        to { opacity: 1; transform: translateY(0); }
-                    }
-                    .animate-fade-in-down { animation: fade-in-down 0.3s ease-out forwards; }
-                    `}
-                </style>
-                <main className="max-w-4xl mx-auto flex flex-col items-center space-y-8">
-                    <header className="text-center w-full">
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight">
-                            <span className="text-white">Safari</span>
-                            <span className="text-cyan-400"> Trip Planner</span>
-                        </h1>
-                        <p className="mt-4 text-lg text-slate-300">
-                            Your personal AI travel agent. Describe your dream trip, and we'll handle the details.
-                        </p>
-                    </header>
-
-                    <div className="w-full sticky top-4 z-10 bg-slate-900/80 backdrop-blur-md p-4 rounded-2xl shadow-lg border border-slate-700/50">
-                        <TripInput
-                            value={userInput}
-                            onChange={setUserInput}
-                            onSubmit={handleSubmit}
-                            isLoading={isLoading}
-                        />
-                    </div>
-
-                    <div className="w-full">
-                        {isLoading && <LoadingSpinner statusText={loadingMessage} />}
-                        {error && (
-                            <div className="bg-red-900/50 border border-red-700 text-red-300 p-4 rounded-lg text-center animate-fade-in">
-                                <p className="font-bold">Oops! Something went wrong.</p>
-                                <p>{error}</p>
-                            </div>
-                        )}
-                        {itinerary && itinerary.itineraries.length > 0 && (
-                            <ItineraryDisplay itineraryData={itinerary.itineraries[0]} />
-                        )}
-                        {!isLoading && !error && !itinerary && (
-                            <EmptyState />
-                        )}
-                    </div>
-                </main>
-            </div>
+        <div className="text-slate-300 min-h-screen font-sans">
+            <main className="container mx-auto px-4 py-8 max-w-4xl">
+                <header className="text-center mb-8">
+                    <h1 className="text-5xl font-extrabold text-white [text-shadow:1px_1px_3px_rgba(0,0,0,0.7)]">
+                        <span className="text-cyan-400">Safari</span> Trip Planner
+                    </h1>
+                    <p className="mt-2 text-lg text-slate-400 [text-shadow:1px_1px_2px_rgba(0,0,0,0.8)]">
+                        Your AI-powered guide to unforgettable journeys.
+                    </p>
+                </header>
+                <div className="bg-slate-800/50 p-6 rounded-2xl shadow-2xl border border-slate-700 backdrop-blur-sm">
+                    <TripInput
+                        value={prompt}
+                        onChange={setPrompt}
+                        onSubmit={() => handleSubmit(prompt)}
+                        isLoading={isLoading}
+                    />
+                    {!isLoading && !itinerary && !error && (
+                        <TripSuggestions onSuggestionClick={handleSuggestionClick} />
+                    )}
+                </div>
+                <div className="mt-8">
+                    {isLoading && <LoadingSpinner statusText={loadingStatus} />}
+                    {error && <div className="bg-red-900/50 border border-red-700 text-red-300 p-4 rounded-lg text-center">{error}</div>}
+                    {!isLoading && !error && itinerary && <ItineraryDisplay itineraryData={itinerary} />}
+                    {!isLoading && !error && !itinerary && <EmptyState />}
+                </div>
+            </main>
+             <footer className="text-center py-6 text-slate-300 text-sm [text-shadow:1px_1px_2px_rgba(0,0,0,0.8)]">
+                <p>Powered by Google Gemini. Itinerary details are generated by AI and may require verification.</p>
+            </footer>
         </div>
     );
 };

@@ -1,4 +1,3 @@
-
 export interface Activity {
   time: string;
   type: 'Sightseeing' | 'Meal' | 'Travel' | 'Activity' | 'Other';
@@ -43,6 +42,9 @@ export interface ItineraryOption {
   };
   accommodation: AccommodationInfo;
   dailyPlan: DailyPlan[];
+  weatherInfo: string;
+  clothingSuggestions: string;
+  travelWarnings: string;
 }
 
 export interface ItineraryResponse {

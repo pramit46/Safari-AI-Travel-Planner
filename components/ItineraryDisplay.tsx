@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ItineraryOption, Activity } from '../types';
-import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon } from './IconComponents';
+import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon } from './IconComponents';
 
 // Add type definitions for the CDN libraries to the window object
 declare global {
@@ -92,28 +92,33 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData }) =>
 
     return (
         <div className="w-full space-y-8 animate-fade-in" ref={itineraryRef}>
-            <header className="text-center relative">
-                <h2 className="text-4xl font-extrabold text-white">{itineraryData.title}</h2>
-                <p className="text-xl text-cyan-400 font-medium mt-2">
-                    Total Estimated Cost: ${itineraryData.totalEstimatedCost.toLocaleString()}
-                </p>
-                <button 
-                    onClick={handleDownloadPdf} 
-                    disabled={isDownloading}
-                    className="absolute top-0 right-0 mt-2 bg-slate-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 disabled:bg-slate-500 disabled:cursor-wait transition-all duration-300 shadow-md flex items-center"
-                >
-                    {isDownloading ? (
-                        <>
-                            <div className="w-5 h-5 border-2 border-t-2 border-slate-400 border-t-white rounded-full animate-spin mr-2"></div>
-                            Downloading...
-                        </>
-                    ) : (
-                        <>
-                            <DownloadIcon className="w-5 h-5 mr-2"/>
-                            Download Plan
-                        </>
-                    )}
-                </button>
+            <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+                <div></div> {/* Left spacer for centering */}
+                <div className="text-center">
+                    <h2 className="text-4xl font-extrabold text-white leading-tight">{itineraryData.title}</h2>
+                    <p className="text-xl text-cyan-400 font-medium mt-2">
+                        Total Estimated Cost: ${itineraryData.totalEstimatedCost.toLocaleString()}
+                    </p>
+                </div>
+                <div className="flex justify-end">
+                    <button 
+                        onClick={handleDownloadPdf} 
+                        disabled={isDownloading}
+                        className="bg-slate-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 disabled:bg-slate-500 disabled:cursor-wait transition-all duration-300 shadow-md flex items-center"
+                    >
+                        {isDownloading ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-t-2 border-slate-400 border-t-white rounded-full animate-spin mr-2"></div>
+                                Downloading...
+                            </>
+                        ) : (
+                            <>
+                                <DownloadIcon className="w-5 h-5 mr-2"/>
+                                Download Plan
+                            </>
+                        )}
+                    </button>
+                </div>
             </header>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -165,6 +170,41 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData }) =>
                     </div>
                 )}
             </div>
+            
+            {(itineraryData.weatherInfo || itineraryData.clothingSuggestions || itineraryData.travelWarnings) && (
+              <div className="space-y-4">
+                  <h3 className="text-3xl font-bold text-white text-center">Trip Essentials</h3>
+                  <div className="grid md:grid-cols-2 gap-4">
+                      {itineraryData.weatherInfo && (
+                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex">
+                              <WeatherIcon className="w-8 h-8 text-cyan-400 mr-4 mt-1 flex-shrink-0"/>
+                              <div>
+                                  <h4 className="font-bold text-white">Weather</h4>
+                                  <p className="text-sm text-slate-400">{itineraryData.weatherInfo}</p>
+                              </div>
+                          </div>
+                      )}
+                      {itineraryData.clothingSuggestions && (
+                           <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex">
+                              <ClothingIcon className="w-8 h-8 text-cyan-400 mr-4 mt-1 flex-shrink-0"/>
+                              <div>
+                                  <h4 className="font-bold text-white">What to Pack</h4>
+                                  <p className="text-sm text-slate-400">{itineraryData.clothingSuggestions}</p>
+                              </div>
+                          </div>
+                      )}
+                  </div>
+                  {itineraryData.travelWarnings && (
+                      <div className="bg-amber-900/50 p-4 rounded-xl border border-amber-700 flex">
+                          <WarningIcon className="w-8 h-8 text-amber-400 mr-4 mt-1 flex-shrink-0"/>
+                          <div>
+                              <h4 className="font-bold text-amber-300">Travel Advisory</h4>
+                              <p className="text-sm text-amber-300/80">{itineraryData.travelWarnings}</p>
+                          </div>
+                      </div>
+                  )}
+              </div>
+            )}
 
             <div>
                 <h3 className="text-3xl font-bold text-white mb-6 text-center">Daily Itinerary</h3>
