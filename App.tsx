@@ -125,7 +125,7 @@ const App: React.FC = () => {
             <main className="container mx-auto px-4 py-8 max-w-4xl">
                 <header className="text-center mb-8">
                     <h1 className="text-5xl font-extrabold text-white [text-shadow:1px_1px_3px_rgba(0,0,0,0.7)]">
-                        <span className="text-cyan-400">Safari</span> Trip Planner
+                        <span className="text-cyan-400">Safari</span> Travel Planner
                     </h1>
                     <p className="mt-2 text-lg text-slate-400 [text-shadow:1px_1px_2px_rgba(0,0,0,0.8)]">
                         Your AI-powered guide to unforgettable journeys.
