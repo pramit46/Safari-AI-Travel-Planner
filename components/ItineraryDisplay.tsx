@@ -228,10 +228,10 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
 
     return (
         <div className="w-full space-y-8 animate-fade-in" ref={itineraryRef}>
-            <header className="flex justify-between items-center gap-4">
+            <header className="flex justify-between items-start gap-4">
                 <div className="w-32 flex-shrink-0"></div>
                 <div className="text-center min-w-0 flex-1">
-                    <h2 className="text-4xl font-extrabold text-white leading-tight truncate" title={itineraryData.title}>
+                    <h2 className="text-4xl font-extrabold text-white leading-tight" title={itineraryData.title}>
                         {itineraryData.title}
                     </h2>
                     <p className="text-xl text-cyan-400 font-medium mt-2">
