@@ -37,7 +37,7 @@ const itinerarySchema = {
                     dailyPlan: dailyPlannerAgentSchema,
                     tripEssentials: essentialsAdvisorAgentSchema
                 },
-                required: ['title', 'totalEstimatedCost', 'currency', 'accommodation', 'dailyPlan', 'tripEssentials']
+                required: ['title', 'totalEstimatedCost', 'currency', 'flights', 'railways', 'accommodation', 'dailyPlan', 'tripEssentials']
             }
         }
     },

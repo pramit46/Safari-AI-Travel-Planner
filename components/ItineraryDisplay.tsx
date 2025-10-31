@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ItineraryOption, Activity, FlightInfo, AccommodationInfo, RailwayInfo } from '../types';
-import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon, RailwayIcon } from './IconComponents';
+import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon, RailwayIcon, ResetIcon } from './IconComponents';
 
 // Add type definitions for the CDN libraries to the window object
 declare global {
@@ -19,6 +19,7 @@ interface ItineraryDisplayProps {
     selectedAccommodations: { [location: string]: AccommodationInfo | null };
     onAccommodationSelect: (accommodation: AccommodationInfo, location: string) => void;
     dynamicTotalCost: number | null;
+    onReset: () => void;
 }
 
 const getCurrencySymbol = (currencyCode: string): string => {
@@ -48,11 +49,15 @@ const FlightOptionCard: React.FC<{ flight: FlightInfo, isSelected: boolean, onSe
         className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'bg-cyan-900/50 border-cyan-500 ring-2 ring-cyan-500' : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'}`}
     >
         <div className="flex justify-between items-center">
-            <span className="font-semibold text-slate-200">{flight.airline} <span className="text-xs text-slate-400">{flight.flightNumber}</span></span>
+            <div className="flex items-center gap-2">
+                 <span className="font-semibold text-slate-200">{flight.airline}</span>
+                 <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">{flight.seatType}</span>
+            </div>
             <span className="font-bold text-white">{currencySymbol}{flight.price.toLocaleString()}</span>
         </div>
         <p className="text-sm text-slate-400 mt-1">
             <span className="font-bold text-cyan-400">{flight.departureAirport}</span> → <span className="font-bold text-cyan-400">{flight.arrivalAirport}</span>
+            <span className="text-xs text-slate-500 ml-2">({flight.flightNumber})</span>
         </p>
         <p className="text-xs text-slate-500">{new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
     </div>
@@ -64,11 +69,15 @@ const RailwayOptionCard: React.FC<{ railway: RailwayInfo, isSelected: boolean, o
         className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'bg-cyan-900/50 border-cyan-500 ring-2 ring-cyan-500' : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'}`}
     >
         <div className="flex justify-between items-center">
-            <span className="font-semibold text-slate-200">{railway.trainProvider} <span className="text-xs text-slate-400">{railway.trainNumber}</span></span>
+             <div className="flex items-center gap-2">
+                <span className="font-semibold text-slate-200">{railway.trainProvider}</span>
+                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">{railway.berthType}</span>
+            </div>
             <span className="font-bold text-white">{currencySymbol}{railway.price.toLocaleString()}</span>
         </div>
         <p className="text-sm text-slate-400 mt-1 truncate">
             <span className="font-bold text-cyan-400">{railway.departureStation}</span> → <span className="font-bold text-cyan-400">{railway.arrivalStation}</span>
+            <span className="text-xs text-slate-500 ml-2">({railway.trainNumber})</span>
         </p>
         <p className="text-xs text-slate-500">{new Date(railway.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(railway.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
     </div>
@@ -135,7 +144,7 @@ const AccommodationOptionCard: React.FC<{ accommodation: AccommodationInfo, isSe
     );
 };
 
-const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, selectedFlights, onFlightSelect, selectedRailways, onRailwaySelect, selectedAccommodations, onAccommodationSelect, dynamicTotalCost }) => {
+const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, selectedFlights, onFlightSelect, selectedRailways, onRailwaySelect, selectedAccommodations, onAccommodationSelect, dynamicTotalCost, onReset }) => {
     const [openDay, setOpenDay] = useState<number | null>(1);
     const itineraryRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -219,25 +228,35 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
 
     return (
         <div className="w-full space-y-8 animate-fade-in" ref={itineraryRef}>
-            <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
-                <div></div>
-                <div className="text-center">
-                    <h2 className="text-4xl font-extrabold text-white leading-tight">{itineraryData.title}</h2>
+            <header className="flex justify-between items-center gap-4">
+                <div className="w-32 flex-shrink-0"></div>
+                <div className="text-center min-w-0 flex-1">
+                    <h2 className="text-4xl font-extrabold text-white leading-tight truncate" title={itineraryData.title}>
+                        {itineraryData.title}
+                    </h2>
                     <p className="text-xl text-cyan-400 font-medium mt-2">
                         Total Estimated Cost: {currencySymbol}{dynamicTotalCost?.toLocaleString()}
                     </p>
                 </div>
-                <div className="flex justify-end">
-                    <button 
+                <div className="w-32 flex-shrink-0 flex justify-end items-center gap-4">
+                     <button 
                         onClick={handleDownloadPdf} 
                         disabled={isDownloading}
-                        className="bg-slate-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-600 disabled:bg-slate-500 disabled:cursor-wait transition-all duration-300 shadow-md flex items-center"
+                        title={isDownloading ? "Downloading..." : "Download Plan"}
+                        className="p-3 bg-slate-700 rounded-full text-slate-200 hover:text-white hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-wait transition-colors"
                     >
                         {isDownloading ? (
-                            <><div className="w-5 h-5 border-2 border-t-2 border-slate-400 border-t-white rounded-full animate-spin mr-2"></div>Downloading...</>
+                            <div className="w-8 h-8 border-4 border-t-4 border-slate-500 border-t-white rounded-full animate-spin"></div>
                         ) : (
-                            <><DownloadIcon className="w-5 h-5 mr-2"/>Download Plan</>
+                            <DownloadIcon className="w-8 h-8" />
                         )}
+                    </button>
+                    <button
+                        onClick={onReset}
+                        title="New Search"
+                        className="p-3 bg-slate-700 rounded-full text-slate-200 hover:text-white hover:bg-slate-600 transition-colors"
+                    >
+                        <ResetIcon className="w-8 h-8" />
                     </button>
                 </div>
             </header>

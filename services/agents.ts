@@ -1,31 +1,38 @@
 import { Type } from "@google/genai";
 
-export const travelAgentSystemInstruction = `You are a master travel agent orchestrating a team of specialist agents to create a comprehensive and personalized travel itinerary. Your team includes:
-- Flight Agent: Finds the best flight options (outbound and inbound).
-- Railway Agent: Finds the best train options (outbound and inbound).
-- Accommodation Agent: Finds suitable accommodation options for each location.
-- Daily Planner Agent: Creates a detailed day-by-day plan of activities.
-- Essentials Advisor Agent: Provides crucial travel advice like weather, packing, and warnings.
+export const travelAgentSystemInstruction = `You are a master travel agent orchestrating a team of specialist agents. Your output MUST be a complete, logical, and budget-conscious travel itinerary. You will follow a strict, multi-step reasoning process. Deviation from this process is a critical failure.
 
-Your primary role is to:
-1.  Receive the user's travel request.
-2.  Analyze the request for all mentioned locations and ensure your agents provide options for each leg of the journey.
-3.  Coordinate with your specialist agents to gather all necessary information.
-4.  Compile the information into a single, detailed, and coherent itinerary option.
-5.  Intelligently manage the user's budget. For accommodations, you must maintain price parity across different locations on a budget trip. Suggesting a luxury hotel in one city and a hostel in another is not acceptable. For transportation, if the user's budget is too low for flights, prioritize more affordable options like railways and omit the flights section.
-6.  Ensure all monetary values are in the currency requested by the user, defaulting to USD if unspecified.
-7.  Strictly adhere to the provided JSON schema for the final output. Do not add any extra text or markdown formatting outside of the JSON structure.
-8.  For flights, railways and accommodations, provide at least three options for each location, sorted by price (cheapest first).
-9.  CRITICAL: For the 'isPureVeg' tag, you MUST be absolutely certain. You must find explicit, verifiable proof from a reliable source (like the hotel's official website, a menu, or a reputable travel review site). If you cannot find this proof, you MUST set 'isPureVeg' to false. DO NOT guess or infer this information. Providing no tag is better than providing an incorrect tag. If you do set it to true, you MUST provide the source URL in 'pureVegSourceLink'.
-10. Calculate the \`totalEstimatedCost\` by summing up the costs of the cheapest flight/railway options, the total cost of the cheapest accommodation for each location, and a reasonable buffer for daily activities, meals, and local transport.`;
+**CRITICAL REASONING PROCESS:**
+
+**Step 1: Analyze Core Request & Budget.**
+- Identify ALL destinations, the total trip duration, and the total budget. This context is paramount for all subsequent steps.
+
+**Step 2: Determine Transport for the FULL JOURNEY (MANDATORY).**
+- This is your most important task. You must find a way for the user to get **TO** their first destination, **BETWEEN** all subsequent destinations, and **BACK** from their final destination.
+- **"Full Journey" Mandate:** If a user requests a trip to "Siliguri & Gangtok", you MUST provide transport options for three distinct legs: 1. Origin to Siliguri/nearby transport hub. 2. Siliguri to Gangtok. 3. Gangtok back to Origin. You will list these sequential legs within the 'outboundOptions' and the final return journey in 'inboundOptions'. It is a CRITICAL FAILURE to only plan transport to the first city.
+- **Mode Evaluation:** Based on the budget and specific route, you MUST evaluate both flights and railways. For certain routes like those in the Himalayas (e.g., Siliguri to Gangtok), road or specific rail options are highly relevant and must be considered.
+- **Resourcefulness:** If you struggle to find budget-appropriate flights from one source, you must broaden your search across your knowledge of different airlines and booking platforms.
+- **Schema Adherence:** You MUST return both the 'flights' and 'railways' keys. If a transport mode is not feasible for a leg, you MUST return empty arrays for its options. It is a CRITICAL FAILURE to omit these keys.
+
+**Step 3: Allocate & Enforce Accommodation Budget (THE MOST CRITICAL RULE).**
+- **A. Calculate Remaining Budget:** Subtract your estimated transport costs from the user's total budget.
+- **B. Calculate the "Hard Price Cap Per Night":** Divide the Remaining Budget by the total number of nights. This number is your absolute maximum average price per night.
+- **C. Enforce the "Hard Cap":** For EVERY accommodation option you suggest, in EVERY location, the 'pricePerNight' **CANNOT EXCEED** this calculated "Hard Price Cap". There are no exceptions. This is the highest priority rule. It is a CRITICAL FAILURE to suggest luxury hotels in one city and budget hotels in another on the same trip.
+- **D. Success Condition:** It is a SUCCESS to return only one or two hotels for a location if those are the only ones that meet the strict budget cap. It is a FAILURE to include expensive hotels just to meet the 'three options' goal.
+- **E. Broaden Your Search if Necessary:** If you struggle to find at least three budget-compliant options for a location, you must broaden your search. Consider a wider variety of sources in your knowledge base, including major international booking sites, local or regional travel portals (e.g., MakeMyTrip for India), and alternative lodging types like guesthouses or well-rated budget inns. Do not give up easily. The goal is to find viable options that respect the user's budget.
+
+**Step 4: Compile Final Plan & Adhere to Data Accuracy Rules.**
+- Assemble the results. Ensure 'totalEstimatedCost' is accurate.
+- **"Pure-Veg" Status:** You are FORBIDDEN to set 'isPureVeg' to true unless you find undeniable, explicit proof on the hotel's OFFICIAL website. If in ANY doubt, it MUST be false. When true, 'pureVegSourceLink' MUST be provided.
+- **Booking Links:** All 'bookingLink' URLs MUST be functional. If a direct link from an official/major site is unavailable, you MUST provide a formatted Google Search URL as a fallback.`;
 
 export const flightAgentSchema = {
     type: Type.OBJECT,
-    description: "Flight details for the trip, including outbound and inbound options. Provide at least two options for each, sorted by price (cheapest first).",
+    description: "Flight details. This key is REQUIRED. If no flights are feasible within the budget, return empty arrays for options.",
     properties: {
         outboundOptions: {
             type: Type.ARRAY,
-            description: "List of outbound flight options.",
+            description: "List of all sequential flight options for the forward journey, including legs between destinations.",
             items: {
                 type: Type.OBJECT,
                 properties: {
@@ -36,14 +43,15 @@ export const flightAgentSchema = {
                     departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     price: { type: Type.NUMBER, description: "Price of the flight ticket." },
-                    bookingLink: { type: Type.STRING, description: "A direct link to book the flight." }
+                    bookingLink: { type: Type.STRING, description: "A direct, working link to book the flight, or a Google Flights search URL as a fallback." },
+                    seatType: { type: Type.STRING, description: "The class of the seat, determined by the trip's budget. e.g., 'Economy', 'Business'."}
                 },
-                required: ['departureAirport', 'arrivalAirport', 'airline', 'flightNumber', 'departureTime', 'arrivalTime', 'price']
+                required: ['departureAirport', 'arrivalAirport', 'airline', 'flightNumber', 'departureTime', 'arrivalTime', 'price', 'bookingLink', 'seatType']
             }
         },
         inboundOptions: {
             type: Type.ARRAY,
-            description: "List of inbound flight options.",
+            description: "List of flight options for the final return journey.",
             items: {
                 type: Type.OBJECT,
                 properties: {
@@ -54,9 +62,10 @@ export const flightAgentSchema = {
                     departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     price: { type: Type.NUMBER, description: "Price of the flight ticket." },
-                    bookingLink: { type: Type.STRING, description: "A direct link to book the flight." }
+                    bookingLink: { type: Type.STRING, description: "A direct, working link to book the flight, or a Google Flights search URL as a fallback." },
+                    seatType: { type: Type.STRING, description: "The class of the seat, determined by the trip's budget. e.g., 'Economy', 'Business'."}
                 },
-                required: ['departureAirport', 'arrivalAirport', 'airline', 'flightNumber', 'departureTime', 'arrivalTime', 'price']
+                required: ['departureAirport', 'arrivalAirport', 'airline', 'flightNumber', 'departureTime', 'arrivalTime', 'price', 'bookingLink', 'seatType']
             }
         }
     },
@@ -65,11 +74,11 @@ export const flightAgentSchema = {
 
 export const railwayAgentSchema = {
     type: Type.OBJECT,
-    description: "Railway details for the trip, if applicable. Includes outbound and inbound options. Provide at least two options for each, sorted by price (cheapest first).",
+    description: "Railway details. This key is REQUIRED. If no trains are feasible or applicable, return empty arrays for options.",
     properties: {
         outboundOptions: {
             type: Type.ARRAY,
-            description: "List of outbound train options.",
+            description: "List of all sequential train options for the forward journey, including legs between destinations.",
             items: {
                 type: Type.OBJECT,
                 properties: {
@@ -80,14 +89,15 @@ export const railwayAgentSchema = {
                     departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     price: { type: Type.NUMBER, description: "Price of the train ticket." },
-                    bookingLink: { type: Type.STRING, description: "A direct link to book the train ticket." }
+                    bookingLink: { type: Type.STRING, description: "A direct, working link to book the train ticket, or a Google search URL as a fallback." },
+                    berthType: { type: Type.STRING, description: "The class of the berth, determined by the trip's budget. e.g., 'Sleeper', '3AC', '2AC', 'CC'."}
                 },
-                required: ['departureStation', 'arrivalStation', 'trainProvider', 'trainNumber', 'departureTime', 'arrivalTime', 'price']
+                required: ['departureStation', 'arrivalStation', 'trainProvider', 'trainNumber', 'departureTime', 'arrivalTime', 'price', 'bookingLink', 'berthType']
             }
         },
         inboundOptions: {
             type: Type.ARRAY,
-            description: "List of inbound train options.",
+            description: "List of train options for the final return journey.",
             items: {
                 type: Type.OBJECT,
                 properties: {
@@ -98,9 +108,10 @@ export const railwayAgentSchema = {
                     departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     price: { type: Type.NUMBER, description: "Price of the train ticket." },
-                    bookingLink: { type: Type.STRING, description: "A direct link to book the train ticket." }
+                    bookingLink: { type: Type.STRING, description: "A direct, working link to book the train ticket, or a Google search URL as a fallback." },
+                    berthType: { type: Type.STRING, description: "The class of the berth, determined by the trip's budget. e.g., 'Sleeper', '3AC', '2AC', 'CC'."}
                 },
-                required: ['departureStation', 'arrivalStation', 'trainProvider', 'trainNumber', 'departureTime', 'arrivalTime', 'price']
+                required: ['departureStation', 'arrivalStation', 'trainProvider', 'trainNumber', 'departureTime', 'arrivalTime', 'price', 'bookingLink', 'berthType']
             }
         }
     },
@@ -109,7 +120,7 @@ export const railwayAgentSchema = {
 
 export const accommodationAgentSchema = {
     type: Type.ARRAY,
-    description: "List of accommodation options, grouped by location. For each location, provide at least three options sorted by total price (cheapest first).",
+    description: "List of accommodation options, grouped by location. For each location, provide at least three options that adhere to the budget parity rule, sorted by total price (cheapest first).",
     items: {
         type: Type.OBJECT,
         properties: {
@@ -124,13 +135,13 @@ export const accommodationAgentSchema = {
                         type: { type: Type.STRING, description: "e.g., Hotel, Hostel, Resort, Guesthouse" },
                         pricePerNight: { type: Type.NUMBER },
                         totalPrice: { type: Type.NUMBER, description: "Total price for the duration of the stay at this location." },
-                        bookingLink: { type: Type.STRING, description: "A direct link to book the accommodation." },
+                        bookingLink: { type: Type.STRING, description: "A direct, working link to book the accommodation, or a Google Search URL as a fallback." },
                         rating: { type: Type.NUMBER, description: "Star rating, e.g., 4.5" },
                         reviewCount: { type: Type.INTEGER },
-                        isPureVeg: { type: Type.BOOLEAN, description: "CRITICAL: Set to true ONLY if you can find explicit, verifiable proof that the hotel is exclusively vegetarian. If there is any doubt, set to false. Do not guess." },
-                        pureVegSourceLink: { type: Type.STRING, description: "Mandatory URL to a reliable source (official website, menu) that explicitly confirms the pure-veg status. Required if 'isPureVeg' is true." }
+                        isPureVeg: { type: Type.BOOLEAN, description: "CRITICAL: Set to true ONLY if you can find explicit, verifiable proof on the hotel's OFFICIAL website that it is a '100% vegetarian' hotel. If there is ANY doubt, this MUST be false." },
+                        pureVegSourceLink: { type: Type.STRING, description: "Mandatory URL to the official hotel page that explicitly confirms the pure-veg status. Required if 'isPureVeg' is true." }
                     },
-                    required: ['name', 'type', 'pricePerNight', 'totalPrice']
+                    required: ['name', 'type', 'pricePerNight', 'totalPrice', 'bookingLink']
                 }
             }
         },

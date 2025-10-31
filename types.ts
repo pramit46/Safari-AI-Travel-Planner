@@ -21,6 +21,7 @@ export interface FlightInfo {
   arrivalTime: string;
   price: number;
   bookingLink?: string;
+  seatType: 'Economy' | 'Business' | 'First';
 }
 
 export interface RailwayInfo {
@@ -32,6 +33,7 @@ export interface RailwayInfo {
     arrivalTime: string;
     price: number;
     bookingLink?: string;
+    berthType: 'EC' | 'CC' | 'Sleeper' | '2AC' | '3AC' | '1AC' | 'General';
 }
 
 export interface AccommodationInfo {

@@ -106,6 +106,17 @@ const App: React.FC = () => {
             setIsLoading(false);
         }
     };
+    
+    const handleReset = () => {
+        setPrompt('');
+        setItinerary(null);
+        setError(null);
+        setSelectedFlights({ outbound: null, inbound: null });
+        setSelectedRailways({ outbound: null, inbound: null });
+        setSelectedAccommodations({});
+        setDynamicTotalCost(null);
+        setBaseCost(0);
+    };
 
     const handleSuggestionClick = (suggestion: string) => {
         setPrompt(suggestion);
@@ -168,6 +179,7 @@ const App: React.FC = () => {
                             selectedAccommodations={selectedAccommodations}
                             onAccommodationSelect={handleAccommodationSelection}
                             dynamicTotalCost={dynamicTotalCost}
+                            onReset={handleReset}
                         />
                     )}
                     {!isLoading && !error && !itinerary && <EmptyState />}
