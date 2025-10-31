@@ -1,142 +1,76 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ItineraryResponse } from '../types';
+import { 
+    travelAgentSystemInstruction,
+    flightAgentSchema,
+    accommodationAgentSchema,
+    dailyPlannerAgentSchema,
+    essentialsAdvisorAgentSchema
+} from './agents';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-
-const responseSchema = {
+// Define the master JSON schema by composing the schemas from individual agents.
+const itinerarySchema = {
     type: Type.OBJECT,
     properties: {
         itineraries: {
             type: Type.ARRAY,
-            description: "A list of potential travel itineraries. Usually just one.",
+            description: "List of itinerary options. Always provide one detailed option compiled from your specialist agents.",
             items: {
                 type: Type.OBJECT,
                 properties: {
-                    title: { type: Type.STRING, description: "A catchy title for the itinerary." },
-                    totalEstimatedCost: { type: Type.NUMBER, description: "Total estimated cost for the trip in USD." },
-                    weatherInfo: { type: Type.STRING, description: "A summary of the expected weather conditions (e.g., temperature range, chance of rain) for the destination during the travel dates." },
-                    clothingSuggestions: { type: Type.STRING, description: "Recommendations for clothing suitable for the weather and planned activities." },
-                    travelWarnings: { type: Type.STRING, description: "Any important travel advisories, safety warnings, or potential hazards (e.g., political unrest, health risks, weather alerts) for the destination. If none, state 'No major warnings at this time.'." },
-                    flights: {
-                        type: Type.OBJECT,
-                        properties: {
-                            outbound: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    departureAirport: { type: Type.STRING },
-                                    arrivalAirport: { type: Type.STRING },
-                                    airline: { type: Type.STRING },
-                                    flightNumber: { type: Type.STRING },
-                                    departureTime: { type: Type.STRING, description: "ISO 8601 format" },
-                                    arrivalTime: { type: Type.STRING, description: "ISO 8601 format" },
-                                    price: { type: Type.NUMBER },
-                                    bookingLink: { type: Type.STRING },
-                                },
-                            },
-                            inbound: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    departureAirport: { type: Type.STRING },
-                                    arrivalAirport: { type: Type.STRING },
-                                    airline: { type: Type.STRING },
-                                    flightNumber: { type: Type.STRING },
-                                    departureTime: { type: Type.STRING, description: "ISO 8601 format" },
-                                    arrivalTime: { type: Type.STRING, description: "ISO 8601 format" },
-                                    price: { type: Type.NUMBER },
-                                    bookingLink: { type: Type.STRING },
-                                },
-                            },
-                        },
+                    title: {
+                        type: Type.STRING,
+                        description: "A creative and descriptive title for the trip plan. e.g., 'An Adventurous 10-Day Journey Through Costa Rica'."
                     },
-                    accommodation: {
-                        type: Type.OBJECT,
-                        properties: {
-                            name: { type: Type.STRING },
-                            type: { type: Type.STRING, description: "e.g., Hotel, Airbnb, Hostel" },
-                            checkInDate: { type: Type.STRING },
-                            checkOutDate: { type: Type.STRING },
-                            pricePerNight: { type: Type.NUMBER },
-                            totalPrice: { type: Type.NUMBER },
-                            bookingLink: { type: Type.STRING },
-                        },
+                    totalEstimatedCost: {
+                        type: Type.NUMBER,
+                        description: "The total estimated cost for the trip, including flights, accommodation, and a buffer for activities and meals. This should be the sum of all individual price fields."
                     },
-                    dailyPlan: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                day: { type: Type.INTEGER },
-                                date: { type: Type.STRING },
-                                title: { type: Type.STRING, description: "A summary for the day's plan." },
-                                activities: {
-                                    type: Type.ARRAY,
-                                    items: {
-                                        type: Type.OBJECT,
-                                        properties: {
-                                            time: { type: Type.STRING, description: "e.g., '09:00 AM'" },
-                                            type: {
-                                                type: Type.STRING,
-                                                enum: ['Sightseeing', 'Meal', 'Travel', 'Activity', 'Other'],
-                                            },
-                                            description: { type: Type.STRING, description: "What the activity is." },
-                                            details: { type: Type.STRING, description: "Optional extra details like address or tips." },
-                                        },
-                                    },
-                                },
-                            },
-                        },
+                    currency: {
+                        type: Type.STRING,
+                        description: "The three-letter currency code (e.g., USD, INR, EUR) for all monetary values in this itinerary, based on the user's request. Default to USD if not specified."
                     },
+                    flights: flightAgentSchema,
+                    accommodation: accommodationAgentSchema,
+                    dailyPlan: dailyPlannerAgentSchema,
+                    tripEssentials: essentialsAdvisorAgentSchema
                 },
-            },
-        },
+                required: ['title', 'totalEstimatedCost', 'currency', 'flights', 'accommodation', 'dailyPlan', 'tripEssentials']
+            }
+        }
     },
+    required: ['itineraries']
 };
 
+const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 
 export const generateItinerary = async (prompt: string): Promise<ItineraryResponse> => {
+    // Use a model suitable for complex reasoning and JSON output as per guidelines.
+    const model = 'gemini-2.5-pro';
+
     try {
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-pro',
-            contents: `Generate a complete travel plan for the following request: ${prompt}`,
+            model: model,
+            contents: prompt,
             config: {
-                systemInstruction: "You are an expert AI travel agent. Your goal is to generate a complete and detailed travel itinerary based on the user's request. You MUST adhere strictly to the provided JSON schema and fill out ALL fields, including flights, accommodation, and a comprehensive daily plan. Do not leave any sections empty. If you cannot find specific real-time data (like a flight number or a specific hotel), use realistic and plausible placeholders (e.g., 'Budget Airline', 'City Center Hotel'). Be creative and provide rich descriptions and details for all activities. The user's budget is a critical constraint. Crucially, you must also provide a summary of the expected weather, suggest appropriate clothing, and list any potential travel warnings or advisories for the destination during the specified dates.",
                 responseMimeType: "application/json",
-                responseSchema: responseSchema,
-                thinkingConfig: { thinkingBudget: 8192 },
+                responseSchema: itinerarySchema,
+                systemInstruction: travelAgentSystemInstruction,
+                temperature: 0.7,
             }
         });
 
         const jsonText = response.text.trim();
-        // The model can sometimes wrap the JSON in markdown, so we remove it
-        const cleanedJsonText = jsonText.replace(/^```json\s*|```$/g, '').trim();
+        // A simple robust guard against markdown fences
+        const cleanedJsonText = jsonText.replace(/^```json\s*|```\s*$/g, '');
+        const result: ItineraryResponse = JSON.parse(cleanedJsonText);
+        return result;
 
-        // The model can also sometimes add conversational text. Let's find the main JSON object.
-        const startIndex = cleanedJsonText.indexOf('{');
-        const endIndex = cleanedJsonText.lastIndexOf('}');
-
-        if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
-            throw new Error("Could not find a valid JSON object in the response.");
+    } catch (e) {
+        console.error("Error generating or parsing itinerary:", e);
+        if (e instanceof Error && e.message.includes('JSON')) {
+             throw new Error("The AI returned an invalid response format. Please try refining your request.");
         }
-
-        const jsonSubstring = cleanedJsonText.substring(startIndex, endIndex + 1);
-
-        const parsedResponse = JSON.parse(jsonSubstring);
-        
-        if (!parsedResponse.itineraries || !Array.isArray(parsedResponse.itineraries)) {
-            throw new Error("Invalid itinerary format received from API.");
-        }
-
-        return parsedResponse;
-
-    } catch (error) {
-        console.error("Error generating itinerary:", error);
-        if (error instanceof Error) {
-            // Re-throw specific JSON parsing errors to be more informative
-            if (error.message.includes("JSON")) {
-                 throw new Error(`There was an issue parsing the itinerary from the AI. Please try again. Details: ${error.message}`);
-            }
-            throw new Error(`Failed to generate itinerary: ${error.message}`);
-        }
-        throw new Error("An unknown error occurred while generating the itinerary.");
+        throw new Error("Failed to generate an itinerary due to an unexpected issue. Please try again later.");
     }
 };

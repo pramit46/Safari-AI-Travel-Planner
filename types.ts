@@ -26,25 +26,33 @@ export interface FlightInfo {
 export interface AccommodationInfo {
   name: string;
   type: string;
-  checkInDate: string;
-  checkOutDate: string;
   pricePerNight: number;
   totalPrice: number;
   bookingLink?: string;
 }
 
-export interface ItineraryOption {
-  title: string;
-  totalEstimatedCost: number;
-  flights: {
-    outbound: FlightInfo;
-    inbound: FlightInfo;
-  };
-  accommodation: AccommodationInfo;
-  dailyPlan: DailyPlan[];
+export interface LocationAccommodation {
+  location: string;
+  options: AccommodationInfo[];
+}
+
+export interface TripEssentials {
   weatherInfo: string;
   clothingSuggestions: string;
   travelWarnings: string;
+}
+
+export interface ItineraryOption {
+  title: string;
+  totalEstimatedCost: number;
+  currency: string; // e.g., "USD", "INR", "EUR"
+  flights: {
+    outboundOptions: FlightInfo[];
+    inboundOptions: FlightInfo[];
+  };
+  accommodation: LocationAccommodation[];
+  dailyPlan: DailyPlan[];
+  tripEssentials: TripEssentials;
 }
 
 export interface ItineraryResponse {

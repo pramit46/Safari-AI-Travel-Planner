@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ItineraryOption } from './types';
+import { ItineraryOption, FlightInfo, AccommodationInfo } from './types';
 import { generateItinerary } from './services/geminiService';
 import TripInput from './components/TripInput';
 import ItineraryDisplay from './components/ItineraryDisplay';
@@ -14,12 +14,17 @@ const App: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [loadingStatus, setLoadingStatus] = useState('');
 
+    const [selectedFlights, setSelectedFlights] = useState<{ outbound: FlightInfo | null, inbound: FlightInfo | null }>({ outbound: null, inbound: null });
+    const [selectedAccommodations, setSelectedAccommodations] = useState<{ [location: string]: AccommodationInfo | null }>({});
+    const [dynamicTotalCost, setDynamicTotalCost] = useState<number | null>(null);
+    const [baseCost, setBaseCost] = useState<number>(0);
+
     const loadingMessages = [
-        "Contacting our AI travel agent...",
-        "Planning your flights and accommodation...",
-        "Crafting your daily activities...",
-        "Finalizing your personalized itinerary...",
-        "Just a moment longer, adventure awaits!"
+        "Contacting our AI travel agents...",
+        "Flight Agent is searching for routes...",
+        "Accommodation Agent is finding hotels...",
+        "Activity Agent is planning your days...",
+        "Finalizing your personalized itinerary..."
     ];
 
     useEffect(() => {
@@ -39,6 +44,15 @@ const App: React.FC = () => {
         };
     }, [isLoading]);
 
+    useEffect(() => {
+        if (baseCost > 0 && selectedFlights.outbound && selectedFlights.inbound && Object.values(selectedAccommodations).every(Boolean)) {
+            const flightCost = selectedFlights.outbound.price + selectedFlights.inbound.price;
+            const accommodationCost = Object.values(selectedAccommodations).reduce((sum, acc) => sum + (acc?.totalPrice || 0), 0);
+            const newTotal = baseCost + flightCost + accommodationCost;
+            setDynamicTotalCost(newTotal);
+        }
+    }, [selectedFlights, selectedAccommodations, baseCost]);
+
     const handleSubmit = async (currentPrompt: string) => {
         if (!currentPrompt.trim()) return;
         setIsLoading(true);
@@ -47,7 +61,32 @@ const App: React.FC = () => {
         try {
             const result = await generateItinerary(currentPrompt);
             if (result.itineraries && result.itineraries.length > 0) {
-                setItinerary(result.itineraries[0]);
+                const initialItinerary = result.itineraries[0];
+                setItinerary(initialItinerary);
+
+                // Initialize flights
+                const cheapestOutbound = initialItinerary.flights?.outboundOptions?.[0];
+                const cheapestInbound = initialItinerary.flights?.inboundOptions?.[0];
+                if(cheapestOutbound && cheapestInbound) {
+                    setSelectedFlights({ outbound: cheapestOutbound, inbound: cheapestInbound });
+                }
+
+                // Initialize accommodations
+                const initialSelections: { [location: string]: AccommodationInfo | null } = {};
+                initialItinerary.accommodation?.forEach(loc => {
+                    if (loc.options && loc.options.length > 0) {
+                        initialSelections[loc.location] = loc.options[0]; // Cheapest is first
+                    }
+                });
+                setSelectedAccommodations(initialSelections);
+                
+                // Calculate base cost (total cost - flights - accommodation)
+                const flightCost = (cheapestOutbound?.price || 0) + (cheapestInbound?.price || 0);
+                const accommodationCost = Object.values(initialSelections).reduce((sum, acc) => sum + (acc?.totalPrice || 0), 0);
+                const calculatedBaseCost = initialItinerary.totalEstimatedCost - flightCost - accommodationCost;
+                
+                setBaseCost(calculatedBaseCost);
+                setDynamicTotalCost(initialItinerary.totalEstimatedCost);
             } else {
                 setError("Sorry, we couldn't generate an itinerary for that request. Please try being more specific.");
             }
@@ -65,6 +104,20 @@ const App: React.FC = () => {
     const handleSuggestionClick = (suggestion: string) => {
         setPrompt(suggestion);
         handleSubmit(suggestion);
+    };
+
+    const handleFlightSelection = (flight: FlightInfo, direction: 'outbound' | 'inbound') => {
+        setSelectedFlights(prev => ({
+            ...prev,
+            [direction]: flight,
+        }));
+    };
+    
+    const handleAccommodationSelection = (accommodation: AccommodationInfo, location: string) => {
+        setSelectedAccommodations(prev => ({
+            ...prev,
+            [location]: accommodation,
+        }));
     };
 
     return (
@@ -92,7 +145,16 @@ const App: React.FC = () => {
                 <div className="mt-8">
                     {isLoading && <LoadingSpinner statusText={loadingStatus} />}
                     {error && <div className="bg-red-900/50 border border-red-700 text-red-300 p-4 rounded-lg text-center">{error}</div>}
-                    {!isLoading && !error && itinerary && <ItineraryDisplay itineraryData={itinerary} />}
+                    {!isLoading && !error && itinerary && (
+                        <ItineraryDisplay 
+                            itineraryData={itinerary} 
+                            selectedFlights={selectedFlights}
+                            onFlightSelect={handleFlightSelection}
+                            selectedAccommodations={selectedAccommodations}
+                            onAccommodationSelect={handleAccommodationSelection}
+                            dynamicTotalCost={dynamicTotalCost}
+                        />
+                    )}
                     {!isLoading && !error && !itinerary && <EmptyState />}
                 </div>
             </main>
