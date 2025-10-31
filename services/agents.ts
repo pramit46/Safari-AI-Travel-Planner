@@ -1,42 +1,60 @@
 import { Type } from "@google/genai";
 
-// Agent Schema for Flight Search
+export const travelAgentSystemInstruction = `You are a master travel agent orchestrating a team of specialist agents to create a comprehensive and personalized travel itinerary. Your team includes:
+- Flight Agent: Finds the best flight options (outbound and inbound).
+- Railway Agent: Finds the best train options (outbound and inbound).
+- Accommodation Agent: Finds suitable accommodation options for each location.
+- Daily Planner Agent: Creates a detailed day-by-day plan of activities.
+- Essentials Advisor Agent: Provides crucial travel advice like weather, packing, and warnings.
+
+Your primary role is to:
+1.  Receive the user's travel request.
+2.  Analyze the request for all mentioned locations and ensure your agents provide options for each leg of the journey.
+3.  Coordinate with your specialist agents to gather all necessary information.
+4.  Compile the information into a single, detailed, and coherent itinerary option.
+5.  Intelligently manage the user's budget. For accommodations, you must maintain price parity across different locations on a budget trip. Suggesting a luxury hotel in one city and a hostel in another is not acceptable. For transportation, if the user's budget is too low for flights, prioritize more affordable options like railways and omit the flights section.
+6.  Ensure all monetary values are in the currency requested by the user, defaulting to USD if unspecified.
+7.  Strictly adhere to the provided JSON schema for the final output. Do not add any extra text or markdown formatting outside of the JSON structure.
+8.  For flights, railways and accommodations, provide at least three options for each location, sorted by price (cheapest first).
+9.  CRITICAL: For the 'isPureVeg' tag, you MUST be absolutely certain. You must find explicit, verifiable proof from a reliable source (like the hotel's official website, a menu, or a reputable travel review site). If you cannot find this proof, you MUST set 'isPureVeg' to false. DO NOT guess or infer this information. Providing no tag is better than providing an incorrect tag. If you do set it to true, you MUST provide the source URL in 'pureVegSourceLink'.
+10. Calculate the \`totalEstimatedCost\` by summing up the costs of the cheapest flight/railway options, the total cost of the cheapest accommodation for each location, and a reasonable buffer for daily activities, meals, and local transport.`;
+
 export const flightAgentSchema = {
     type: Type.OBJECT,
-    description: "The flight agent's findings for round-trip flights. It should provide a few choices for both directions.",
+    description: "Flight details for the trip, including outbound and inbound options. Provide at least two options for each, sorted by price (cheapest first).",
     properties: {
         outboundOptions: {
             type: Type.ARRAY,
-            description: "A list of outbound flight options. Provide a few choices within a 10% price deviation of the most optimal flight.",
+            description: "List of outbound flight options.",
             items: {
                 type: Type.OBJECT,
                 properties: {
-                    departureAirport: { type: Type.STRING, description: "Departure airport code (e.g., SFO)." },
-                    arrivalAirport: { type: Type.STRING, description: "Arrival airport code (e.g., LIR)." },
-                    airline: { type: Type.STRING, description: "Name of the airline." },
-                    flightNumber: { type: Type.STRING, description: "Flight number." },
-                    departureTime: { type: Type.STRING, description: "Departure date and time in ISO 8601 format." },
-                    arrivalTime: { type: Type.STRING, description: "Arrival date and time in ISO 8601 format." },
-                    price: { type: Type.NUMBER, description: "Price for the one-way flight ticket." },
-                    bookingLink: { type: Type.STRING, description: "A URL to a booking website for this flight." },
+                    departureAirport: { type: Type.STRING, description: "3-letter IATA code for the departure airport." },
+                    arrivalAirport: { type: Type.STRING, description: "3-letter IATA code for the arrival airport." },
+                    airline: { type: Type.STRING },
+                    flightNumber: { type: Type.STRING },
+                    departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
+                    arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
+                    price: { type: Type.NUMBER, description: "Price of the flight ticket." },
+                    bookingLink: { type: Type.STRING, description: "A direct link to book the flight." }
                 },
                 required: ['departureAirport', 'arrivalAirport', 'airline', 'flightNumber', 'departureTime', 'arrivalTime', 'price']
             }
         },
         inboundOptions: {
             type: Type.ARRAY,
-            description: "A list of inbound flight options. Provide a few choices within a 10% price deviation of the most optimal flight.",
+            description: "List of inbound flight options.",
             items: {
-                 type: Type.OBJECT,
+                type: Type.OBJECT,
                 properties: {
-                    departureAirport: { type: Type.STRING, description: "Departure airport code (e.g., LIR)." },
-                    arrivalAirport: { type: Type.STRING, description: "Arrival airport code (e.g., SFO)." },
-                    airline: { type: Type.STRING, description: "Name of the airline." },
-                    flightNumber: { type: Type.STRING, description: "Flight number." },
-                    departureTime: { type: Type.STRING, description: "Departure date and time in ISO 8601 format." },
-                    arrivalTime: { type: Type.STRING, description: "Arrival date and time in ISO 8601 format." },
-                    price: { type: Type.NUMBER, description: "Price for the one-way flight ticket." },
-                    bookingLink: { type: Type.STRING, description: "A URL to a booking website for this flight." },
+                    departureAirport: { type: Type.STRING, description: "3-letter IATA code for the departure airport." },
+                    arrivalAirport: { type: Type.STRING, description: "3-letter IATA code for the arrival airport." },
+                    airline: { type: Type.STRING },
+                    flightNumber: { type: Type.STRING },
+                    departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
+                    arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
+                    price: { type: Type.NUMBER, description: "Price of the flight ticket." },
+                    bookingLink: { type: Type.STRING, description: "A direct link to book the flight." }
                 },
                 required: ['departureAirport', 'arrivalAirport', 'airline', 'flightNumber', 'departureTime', 'arrivalTime', 'price']
             }
@@ -45,43 +63,42 @@ export const flightAgentSchema = {
     required: ['outboundOptions', 'inboundOptions']
 };
 
-// Agent Schema for Railway Search
 export const railwayAgentSchema = {
     type: Type.OBJECT,
-    description: "The railway agent's findings for round-trip train journeys. Provide choices for both directions if applicable.",
+    description: "Railway details for the trip, if applicable. Includes outbound and inbound options. Provide at least two options for each, sorted by price (cheapest first).",
     properties: {
         outboundOptions: {
             type: Type.ARRAY,
-            description: "A list of outbound train journey options.",
+            description: "List of outbound train options.",
             items: {
                 type: Type.OBJECT,
                 properties: {
-                    departureStation: { type: Type.STRING, description: "Name of the departure train station." },
-                    arrivalStation: { type: Type.STRING, description: "Name of the arrival train station." },
-                    trainProvider: { type: Type.STRING, description: "Name of the train company or provider." },
-                    trainNumber: { type: Type.STRING, description: "Train number or service name." },
-                    departureTime: { type: Type.STRING, description: "Departure date and time in ISO 8601 format." },
-                    arrivalTime: { type: Type.STRING, description: "Arrival date and time in ISO 8601 format." },
-                    price: { type: Type.NUMBER, description: "Price for the one-way train ticket." },
-                    bookingLink: { type: Type.STRING, description: "A URL to a booking website for this train journey." },
+                    departureStation: { type: Type.STRING },
+                    arrivalStation: { type: Type.STRING },
+                    trainProvider: { type: Type.STRING },
+                    trainNumber: { type: Type.STRING },
+                    departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
+                    arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
+                    price: { type: Type.NUMBER, description: "Price of the train ticket." },
+                    bookingLink: { type: Type.STRING, description: "A direct link to book the train ticket." }
                 },
                 required: ['departureStation', 'arrivalStation', 'trainProvider', 'trainNumber', 'departureTime', 'arrivalTime', 'price']
             }
         },
         inboundOptions: {
             type: Type.ARRAY,
-            description: "A list of inbound train journey options.",
+            description: "List of inbound train options.",
             items: {
-                 type: Type.OBJECT,
+                type: Type.OBJECT,
                 properties: {
-                    departureStation: { type: Type.STRING, description: "Name of the departure train station." },
-                    arrivalStation: { type: Type.STRING, description: "Name of the arrival train station." },
-                    trainProvider: { type: Type.STRING, description: "Name of the train company or provider." },
-                    trainNumber: { type: Type.STRING, description: "Train number or service name." },
-                    departureTime: { type: Type.STRING, description: "Departure date and time in ISO 8601 format." },
-                    arrivalTime: { type: Type.STRING, description: "Arrival date and time in ISO 8601 format." },
-                    price: { type: Type.NUMBER, description: "Price for the one-way train ticket." },
-                    bookingLink: { type: Type.STRING, description: "A URL to a booking website for this train journey." },
+                    departureStation: { type: Type.STRING },
+                    arrivalStation: { type: Type.STRING },
+                    trainProvider: { type: Type.STRING },
+                    trainNumber: { type: Type.STRING },
+                    departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
+                    arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
+                    price: { type: Type.NUMBER, description: "Price of the train ticket." },
+                    bookingLink: { type: Type.STRING, description: "A direct link to book the train ticket." }
                 },
                 required: ['departureStation', 'arrivalStation', 'trainProvider', 'trainNumber', 'departureTime', 'arrivalTime', 'price']
             }
@@ -90,29 +107,30 @@ export const railwayAgentSchema = {
     required: ['outboundOptions', 'inboundOptions']
 };
 
-// Agent Schema for Accommodation Search
 export const accommodationAgentSchema = {
     type: Type.ARRAY,
-    description: "The accommodation agent's findings, grouped by location. For each location, provide several options sorted by total price in ascending order.",
+    description: "List of accommodation options, grouped by location. For each location, provide at least three options sorted by total price (cheapest first).",
     items: {
         type: Type.OBJECT,
         properties: {
-            location: { type: Type.STRING, description: "The city or area for this group of accommodation options (e.g., 'Kyoto', 'Hakone')." },
+            location: { type: Type.STRING, description: "The city or area where the accommodation is located." },
             options: {
                 type: Type.ARRAY,
-                description: "A list of accommodation options for this location, sorted by totalPrice.",
+                description: "List of accommodation options for this location.",
                 items: {
                     type: Type.OBJECT,
                     properties: {
-                        name: { type: Type.STRING, description: "Name of the hotel or accommodation." },
-                        type: { type: Type.STRING, description: "Type of accommodation (e.g., Hotel, Airbnb, Hostel)." },
-                        pricePerNight: { type: Type.NUMBER, description: "Cost per night." },
-                        totalPrice: { type: Type.NUMBER, description: "Total cost for the entire stay at this location." },
-                        bookingLink: { type: Type.STRING, description: "A URL to a booking website for this accommodation." },
-                        rating: { type: Type.NUMBER, description: "The Google review rating for the accommodation (e.g., 4.5)." },
-                        reviewCount: { type: Type.NUMBER, description: "The total number of Google reviews (e.g., 1234)." }
+                        name: { type: Type.STRING },
+                        type: { type: Type.STRING, description: "e.g., Hotel, Hostel, Resort, Guesthouse" },
+                        pricePerNight: { type: Type.NUMBER },
+                        totalPrice: { type: Type.NUMBER, description: "Total price for the duration of the stay at this location." },
+                        bookingLink: { type: Type.STRING, description: "A direct link to book the accommodation." },
+                        rating: { type: Type.NUMBER, description: "Star rating, e.g., 4.5" },
+                        reviewCount: { type: Type.INTEGER },
+                        isPureVeg: { type: Type.BOOLEAN, description: "CRITICAL: Set to true ONLY if you can find explicit, verifiable proof that the hotel is exclusively vegetarian. If there is any doubt, set to false. Do not guess." },
+                        pureVegSourceLink: { type: Type.STRING, description: "Mandatory URL to a reliable source (official website, menu) that explicitly confirms the pure-veg status. Required if 'isPureVeg' is true." }
                     },
-                    required: ['name', 'type', 'pricePerNight', 'totalPrice', 'rating', 'reviewCount']
+                    required: ['name', 'type', 'pricePerNight', 'totalPrice']
                 }
             }
         },
@@ -120,25 +138,25 @@ export const accommodationAgentSchema = {
     }
 };
 
-// Agent Schema for Daily Activity Planning
 export const dailyPlannerAgentSchema = {
     type: Type.ARRAY,
-    description: "The daily planner agent's day-by-day schedule of activities, including meals, sightseeing, etc. This plan should account for travel between different accommodation locations if applicable.",
+    description: "A detailed day-by-day plan for the entire trip.",
     items: {
         type: Type.OBJECT,
         properties: {
-            day: { type: Type.NUMBER, description: "The day number of the itinerary (e.g., 1, 2, 3)." },
-            date: { type: Type.STRING, description: "The specific date for this day's plan in ISO 8601 format." },
-            title: { type: Type.STRING, description: "A short, catchy title for the day's theme (e.g., 'Arrival and Kyoto Exploration')." },
+            day: { type: Type.INTEGER, description: "The day number, starting from 1." },
+            date: { type: Type.STRING, description: "The specific date for this day's plan in 'YYYY-MM-DD' format." },
+            title: { type: Type.STRING, description: "A short, descriptive title for the day's theme or main event. e.g., 'Arrival and Kyoto Exploration'." },
             activities: {
                 type: Type.ARRAY,
+                description: "A list of activities planned for the day, in chronological order.",
                 items: {
                     type: Type.OBJECT,
                     properties: {
-                        time: { type: Type.STRING, description: "Estimated time for the activity (e.g., '9:00 AM', 'Afternoon')." },
-                        type: { type: Type.STRING, description: "Type of activity. Must be one of: 'Sightseeing', 'Meal', 'Travel', 'Activity', 'Other'." },
-                        description: { type: Type.STRING, description: "A short description of the activity." },
-                        details: { type: Type.STRING, description: "Optional extra details, tips, or notes about the activity." },
+                        time: { type: Type.STRING, description: "Approximate time for the activity, e.g., '09:00 AM' or 'Afternoon'." },
+                        type: { type: Type.STRING, description: "The category of the activity. Must be one of: 'Sightseeing', 'Meal', 'Travel', 'Activity', 'Other'." },
+                        description: { type: Type.STRING, description: "A brief description of the activity." },
+                        details: { type: Type.STRING, description: "Optional extra details, tips, or context about the activity." }
                     },
                     required: ['time', 'type', 'description']
                 }
@@ -148,39 +166,13 @@ export const dailyPlannerAgentSchema = {
     }
 };
 
-// Agent Schema for Trip Essentials & Advisories
 export const essentialsAdvisorAgentSchema = {
     type: Type.OBJECT,
-    description: "The trip advisor agent's report on essential information.",
+    description: "Essential pre-trip information and advice.",
     properties: {
-        weatherInfo: {
-            type: Type.STRING,
-            description: "A brief summary of the expected weather conditions for the destination during the travel dates."
-        },
-        clothingSuggestions: {
-            type: Type.STRING,
-            description: "Recommendations on what type of clothing to pack based on the weather and planned activities."
-        },
-        travelWarnings: {
-            type: Type.STRING,
-            description: "Any relevant travel warnings, a afty tips, or cultural etiquette to be aware of. If none, state that clearly."
-        }
+        weatherInfo: { type: Type.STRING, description: "A summary of the expected weather conditions during the trip." },
+        clothingSuggestions: { type: Type.STRING, description: "Recommendations on what clothing to pack based on the weather and planned activities." },
+        travelWarnings: { type: Type.STRING, description: "Any relevant travel warnings, health advisories, or safety tips for the destination. If none, state 'No major travel warnings at this time.'." }
     },
     required: ['weatherInfo', 'clothingSuggestions', 'travelWarnings']
 };
-
-
-// System Instruction for the Master Travel Agent (Orchestrator)
-export const travelAgentSystemInstruction = `You are an expert travel agent AI named "Safari". You are the orchestrator of a team of specialized agents.
-Your goal is to create a single, detailed, and personalized travel itinerary based on the user's request.
-Your process is as follows:
-1.  **Currency Identification**: First, identify the user's preferred currency from their prompt (e.g., INR, EUR, USD). If no currency is specified, default to USD. All monetary values in your response MUST be in this currency.
-2.  **Consult Transport Agents**: Your primary task is to determine how the traveler gets TO the destination region. You MUST consult both your "Flight Agent" and your "Railway Agent" to find transport options for the main journey to the starting point of the itinerary and back from the ending point. You MUST include at least one of the 'flights' or 'railways' keys in your response for any trip that requires such travel. You should only omit BOTH keys if the user's request explicitly describes a trip that does not require long-distance travel (e.g., a local city tour). For each transport mode you include, provide a few alternatives for both outbound and inbound journeys.
-3.  Consult your "Accommodation Agent" to find suitable places to stay. For each accommodation, you MUST include its Google review rating and the number of reviews. If the trip involves multiple locations, provide several options for each location. All options for a given location must be sorted by total price in ascending order.
-4.  Consult your "Daily Planner Agent" to create a day-by-day schedule of activities, including sightseeing and eateries.
-5.  Consult your "Trip Advisor Agent" to gather essential information on weather, packing, and safety warnings.
-6.  Finally, compile all this information into a single, cohesive itinerary. Calculate the total estimated cost based on the CHEAPEST transport options and the CHEAPEST accommodation option for EACH location.
-
-Ensure all costs are estimated and the total cost reflects the user's budget.
-All dates and times should be in ISO 8601 format.
-Your final output must be a JSON object that strictly adheres to the provided schema, containing the results from all your specialized agents. Do not output anything other than the JSON object.`;

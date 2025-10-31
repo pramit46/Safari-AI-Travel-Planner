@@ -42,6 +42,8 @@ export interface AccommodationInfo {
   bookingLink?: string;
   rating?: number;
   reviewCount?: number;
+  isPureVeg?: boolean;
+  pureVegSourceLink?: string;
 }
 
 export interface LocationAccommodation {
