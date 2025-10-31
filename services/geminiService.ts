@@ -5,7 +5,8 @@ import {
     flightAgentSchema,
     accommodationAgentSchema,
     dailyPlannerAgentSchema,
-    essentialsAdvisorAgentSchema
+    essentialsAdvisorAgentSchema,
+    railwayAgentSchema
 } from './agents';
 
 // Define the master JSON schema by composing the schemas from individual agents.
@@ -31,11 +32,12 @@ const itinerarySchema = {
                         description: "The three-letter currency code (e.g., USD, INR, EUR) for all monetary values in this itinerary, based on the user's request. Default to USD if not specified."
                     },
                     flights: flightAgentSchema,
+                    railways: railwayAgentSchema,
                     accommodation: accommodationAgentSchema,
                     dailyPlan: dailyPlannerAgentSchema,
                     tripEssentials: essentialsAdvisorAgentSchema
                 },
-                required: ['title', 'totalEstimatedCost', 'currency', 'flights', 'accommodation', 'dailyPlan', 'tripEssentials']
+                required: ['title', 'totalEstimatedCost', 'currency', 'accommodation', 'dailyPlan', 'tripEssentials']
             }
         }
     },

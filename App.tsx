@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ItineraryOption, FlightInfo, AccommodationInfo } from './types';
+import { ItineraryOption, FlightInfo, AccommodationInfo, RailwayInfo } from './types';
 import { generateItinerary } from './services/geminiService';
 import TripInput from './components/TripInput';
 import ItineraryDisplay from './components/ItineraryDisplay';
@@ -15,13 +15,14 @@ const App: React.FC = () => {
     const [loadingStatus, setLoadingStatus] = useState('');
 
     const [selectedFlights, setSelectedFlights] = useState<{ outbound: FlightInfo | null, inbound: FlightInfo | null }>({ outbound: null, inbound: null });
+    const [selectedRailways, setSelectedRailways] = useState<{ outbound: RailwayInfo | null, inbound: RailwayInfo | null }>({ outbound: null, inbound: null });
     const [selectedAccommodations, setSelectedAccommodations] = useState<{ [location: string]: AccommodationInfo | null }>({});
     const [dynamicTotalCost, setDynamicTotalCost] = useState<number | null>(null);
     const [baseCost, setBaseCost] = useState<number>(0);
 
     const loadingMessages = [
         "Contacting our AI travel agents...",
-        "Flight Agent is searching for routes...",
+        "Transport Agents are searching for routes...",
         "Accommodation Agent is finding hotels...",
         "Activity Agent is planning your days...",
         "Finalizing your personalized itinerary..."
@@ -45,13 +46,14 @@ const App: React.FC = () => {
     }, [isLoading]);
 
     useEffect(() => {
-        if (baseCost > 0 && selectedFlights.outbound && selectedFlights.inbound && Object.values(selectedAccommodations).every(Boolean)) {
-            const flightCost = selectedFlights.outbound.price + selectedFlights.inbound.price;
+        if (baseCost > 0 && Object.values(selectedAccommodations).every(Boolean)) {
+            const flightCost = (selectedFlights.outbound?.price || 0) + (selectedFlights.inbound?.price || 0);
+            const railwayCost = (selectedRailways.outbound?.price || 0) + (selectedRailways.inbound?.price || 0);
             const accommodationCost = Object.values(selectedAccommodations).reduce((sum, acc) => sum + (acc?.totalPrice || 0), 0);
-            const newTotal = baseCost + flightCost + accommodationCost;
+            const newTotal = baseCost + flightCost + railwayCost + accommodationCost;
             setDynamicTotalCost(newTotal);
         }
-    }, [selectedFlights, selectedAccommodations, baseCost]);
+    }, [selectedFlights, selectedRailways, selectedAccommodations, baseCost]);
 
     const handleSubmit = async (currentPrompt: string) => {
         if (!currentPrompt.trim()) return;
@@ -65,11 +67,14 @@ const App: React.FC = () => {
                 setItinerary(initialItinerary);
 
                 // Initialize flights
-                const cheapestOutbound = initialItinerary.flights?.outboundOptions?.[0];
-                const cheapestInbound = initialItinerary.flights?.inboundOptions?.[0];
-                if(cheapestOutbound && cheapestInbound) {
-                    setSelectedFlights({ outbound: cheapestOutbound, inbound: cheapestInbound });
-                }
+                const cheapestOutboundFlight = initialItinerary.flights?.outboundOptions?.[0];
+                const cheapestInboundFlight = initialItinerary.flights?.inboundOptions?.[0];
+                setSelectedFlights({ outbound: cheapestOutboundFlight || null, inbound: cheapestInboundFlight || null });
+
+                 // Initialize railways
+                 const cheapestOutboundRailway = initialItinerary.railways?.outboundOptions?.[0];
+                 const cheapestInboundRailway = initialItinerary.railways?.inboundOptions?.[0];
+                 setSelectedRailways({ outbound: cheapestOutboundRailway || null, inbound: cheapestInboundRailway || null });
 
                 // Initialize accommodations
                 const initialSelections: { [location: string]: AccommodationInfo | null } = {};
@@ -80,10 +85,11 @@ const App: React.FC = () => {
                 });
                 setSelectedAccommodations(initialSelections);
                 
-                // Calculate base cost (total cost - flights - accommodation)
-                const flightCost = (cheapestOutbound?.price || 0) + (cheapestInbound?.price || 0);
+                // Calculate base cost (total cost - transport - accommodation)
+                const flightCost = (cheapestOutboundFlight?.price || 0) + (cheapestInboundFlight?.price || 0);
+                const railwayCost = (cheapestOutboundRailway?.price || 0) + (cheapestInboundRailway?.price || 0);
                 const accommodationCost = Object.values(initialSelections).reduce((sum, acc) => sum + (acc?.totalPrice || 0), 0);
-                const calculatedBaseCost = initialItinerary.totalEstimatedCost - flightCost - accommodationCost;
+                const calculatedBaseCost = initialItinerary.totalEstimatedCost - flightCost - railwayCost - accommodationCost;
                 
                 setBaseCost(calculatedBaseCost);
                 setDynamicTotalCost(initialItinerary.totalEstimatedCost);
@@ -110,6 +116,13 @@ const App: React.FC = () => {
         setSelectedFlights(prev => ({
             ...prev,
             [direction]: flight,
+        }));
+    };
+
+    const handleRailwaySelection = (railway: RailwayInfo, direction: 'outbound' | 'inbound') => {
+        setSelectedRailways(prev => ({
+            ...prev,
+            [direction]: railway,
         }));
     };
     
@@ -150,6 +163,8 @@ const App: React.FC = () => {
                             itineraryData={itinerary} 
                             selectedFlights={selectedFlights}
                             onFlightSelect={handleFlightSelection}
+                            selectedRailways={selectedRailways}
+                            onRailwaySelect={handleRailwaySelection}
                             selectedAccommodations={selectedAccommodations}
                             onAccommodationSelect={handleAccommodationSelection}
                             dynamicTotalCost={dynamicTotalCost}

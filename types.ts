@@ -23,12 +23,25 @@ export interface FlightInfo {
   bookingLink?: string;
 }
 
+export interface RailwayInfo {
+    departureStation: string;
+    arrivalStation: string;
+    trainProvider: string;
+    trainNumber: string;
+    departureTime: string;
+    arrivalTime: string;
+    price: number;
+    bookingLink?: string;
+}
+
 export interface AccommodationInfo {
   name: string;
   type: string;
   pricePerNight: number;
   totalPrice: number;
   bookingLink?: string;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export interface LocationAccommodation {
@@ -46,9 +59,13 @@ export interface ItineraryOption {
   title: string;
   totalEstimatedCost: number;
   currency: string; // e.g., "USD", "INR", "EUR"
-  flights: {
+  flights?: {
     outboundOptions: FlightInfo[];
     inboundOptions: FlightInfo[];
+  };
+  railways?: {
+    outboundOptions: RailwayInfo[];
+    inboundOptions: RailwayInfo[];
   };
   accommodation: LocationAccommodation[];
   dailyPlan: DailyPlan[];

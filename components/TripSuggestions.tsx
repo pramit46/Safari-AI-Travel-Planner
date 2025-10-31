@@ -8,7 +8,7 @@ const suggestions = [
     "A 1-week cultural trip to Kyoto, Japan in spring for under $3000.",
     "A 10-day adventure tour in Costa Rica, focusing on wildlife and hiking.",
     "A romantic 4-day weekend getaway to Paris from London by train.",
-    "Family-friendly beach vacation in the Maldives for 5 days in July.",
+    "Family Trip to Siliguri & Gangtok from Dec 15th to Dec 31st within the budget of ₹50000",
 ];
 
 const TripSuggestions: React.FC<TripSuggestionsProps> = ({ onSuggestionClick }) => {

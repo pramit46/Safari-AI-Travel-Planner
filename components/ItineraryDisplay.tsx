@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ItineraryOption, Activity, FlightInfo, AccommodationInfo } from '../types';
-import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon } from './IconComponents';
+import { ItineraryOption, Activity, FlightInfo, AccommodationInfo, RailwayInfo } from '../types';
+import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon, RailwayIcon } from './IconComponents';
 
 // Add type definitions for the CDN libraries to the window object
 declare global {
@@ -14,6 +14,8 @@ interface ItineraryDisplayProps {
     itineraryData: ItineraryOption;
     selectedFlights: { outbound: FlightInfo | null; inbound: FlightInfo | null };
     onFlightSelect: (flight: FlightInfo, direction: 'outbound' | 'inbound') => void;
+    selectedRailways: { outbound: RailwayInfo | null; inbound: RailwayInfo | null };
+    onRailwaySelect: (railway: RailwayInfo, direction: 'outbound' | 'inbound') => void;
     selectedAccommodations: { [location: string]: AccommodationInfo | null };
     onAccommodationSelect: (accommodation: AccommodationInfo, location: string) => void;
     dynamicTotalCost: number | null;
@@ -49,10 +51,49 @@ const FlightOptionCard: React.FC<{ flight: FlightInfo, isSelected: boolean, onSe
             <span className="font-semibold text-slate-200">{flight.airline} <span className="text-xs text-slate-400">{flight.flightNumber}</span></span>
             <span className="font-bold text-white">{currencySymbol}{flight.price.toLocaleString()}</span>
         </div>
-        <p className="text-xs text-slate-400 mt-1">{flight.departureAirport} → {flight.arrivalAirport}</p>
+        <p className="text-sm text-slate-400 mt-1">
+            <span className="font-bold text-cyan-400">{flight.departureAirport}</span> → <span className="font-bold text-cyan-400">{flight.arrivalAirport}</span>
+        </p>
         <p className="text-xs text-slate-500">{new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
     </div>
 );
+
+const RailwayOptionCard: React.FC<{ railway: RailwayInfo, isSelected: boolean, onSelect: () => void, currencySymbol: string }> = ({ railway, isSelected, onSelect, currencySymbol }) => (
+    <div
+        onClick={onSelect}
+        className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? 'bg-cyan-900/50 border-cyan-500 ring-2 ring-cyan-500' : 'bg-slate-900/50 border-slate-700 hover:border-slate-500'}`}
+    >
+        <div className="flex justify-between items-center">
+            <span className="font-semibold text-slate-200">{railway.trainProvider} <span className="text-xs text-slate-400">{railway.trainNumber}</span></span>
+            <span className="font-bold text-white">{currencySymbol}{railway.price.toLocaleString()}</span>
+        </div>
+        <p className="text-sm text-slate-400 mt-1 truncate">
+            <span className="font-bold text-cyan-400">{railway.departureStation}</span> → <span className="font-bold text-cyan-400">{railway.arrivalStation}</span>
+        </p>
+        <p className="text-xs text-slate-500">{new Date(railway.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(railway.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+    </div>
+);
+
+
+const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
+    const fullStars = Math.floor(rating);
+    const halfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
+
+    return (
+        <div className="flex items-center">
+            {[...Array(fullStars)].map((_, i) => (
+                <svg key={`full-${i}`} className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+            ))}
+            {halfStar && (
+                <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0v15z"/></svg>
+            )}
+            {[...Array(emptyStars)].map((_, i) => (
+                <svg key={`empty-${i}`} className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/></svg>
+            ))}
+        </div>
+    );
+};
 
 const AccommodationOptionCard: React.FC<{ accommodation: AccommodationInfo, isSelected: boolean, onSelect: () => void, currencySymbol: string }> = ({ accommodation, isSelected, onSelect, currencySymbol }) => {
     const bookingLink = accommodation.bookingLink || `https://www.google.com/search?q=${encodeURIComponent(accommodation.name)}`;
@@ -64,11 +105,17 @@ const AccommodationOptionCard: React.FC<{ accommodation: AccommodationInfo, isSe
             <div className="flex justify-between items-start">
                 <div>
                     <h5 className="font-semibold text-slate-200">{accommodation.name}</h5>
-                    <p className="text-xs text-slate-400">{accommodation.type}</p>
+                    <p className="text-xs text-slate-400 mb-1">{accommodation.type}</p>
+                    {accommodation.rating != null && accommodation.reviewCount != null && (
+                        <div className="flex items-center space-x-2">
+                            <StarRating rating={accommodation.rating} />
+                            <span className="text-xs text-slate-400">({accommodation.reviewCount.toLocaleString()} reviews)</span>
+                        </div>
+                    )}
                 </div>
                 <div className="text-right">
                     <p className="font-bold text-white">{currencySymbol}{accommodation.totalPrice.toLocaleString()}</p>
-                    <p className="text-xs text-slate-500">{currencySymbol}{accommodation.pricePerNight}/night</p>
+                    <p className="text-xs text-slate-500">{currencySymbol}{accommodation.pricePerNight.toLocaleString()}/night</p>
                 </div>
             </div>
              <a href={bookingLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center mt-2 text-xs bg-slate-600 text-slate-300 font-bold py-1 px-2 rounded-md hover:bg-slate-500 transition-colors">
@@ -78,7 +125,7 @@ const AccommodationOptionCard: React.FC<{ accommodation: AccommodationInfo, isSe
     );
 };
 
-const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, selectedFlights, onFlightSelect, selectedAccommodations, onAccommodationSelect, dynamicTotalCost }) => {
+const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, selectedFlights, onFlightSelect, selectedRailways, onRailwaySelect, selectedAccommodations, onAccommodationSelect, dynamicTotalCost }) => {
     const [openDay, setOpenDay] = useState<number | null>(1);
     const itineraryRef = useRef<HTMLDivElement>(null);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -153,6 +200,9 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
     const outboundBookingLink = selectedFlights.outbound?.bookingLink || `https://www.google.com/flights?q=flights+from+${encodeURIComponent(selectedFlights.outbound?.departureAirport || '')}+to+${encodeURIComponent(selectedFlights.outbound?.arrivalAirport || '')}`;
     const inboundBookingLink = selectedFlights.inbound?.bookingLink || `https://www.google.com/flights?q=flights+from+${encodeURIComponent(selectedFlights.inbound?.departureAirport || '')}+to+${encodeURIComponent(selectedFlights.inbound?.arrivalAirport || '')}`;
     
+    const outboundRailwayBookingLink = selectedRailways.outbound?.bookingLink || `https://www.google.com/search?q=trains+from+${encodeURIComponent(selectedRailways.outbound?.departureStation || '')}+to+${encodeURIComponent(selectedRailways.outbound?.arrivalStation || '')}`;
+    const inboundRailwayBookingLink = selectedRailways.inbound?.bookingLink || `https://www.google.com/search?q=trains+from+${encodeURIComponent(selectedRailways.inbound?.departureStation || '')}+to+${encodeURIComponent(selectedRailways.inbound?.arrivalStation || '')}`;
+
     return (
         <div className="w-full space-y-8 animate-fade-in" ref={itineraryRef}>
             <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
@@ -187,7 +237,7 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
                         </div>
                         <div className="space-y-4">
                             <div>
-                                <h4 className="font-semibold text-slate-300 mb-2">Outbound Options</h4>
+                                <h4 className="font-bold text-slate-300 mb-2">Outbound Options</h4>
                                 <div className="space-y-2">
                                     {itineraryData.flights.outboundOptions.map(flight => (
                                         <FlightOptionCard key={`${flight.flightNumber}-${flight.departureTime}`} flight={flight} isSelected={selectedFlights.outbound?.flightNumber === flight.flightNumber && selectedFlights.outbound?.departureTime === flight.departureTime} onSelect={() => onFlightSelect(flight, 'outbound')} currencySymbol={currencySymbol} />
@@ -196,7 +246,7 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
                                  <a href={outboundBookingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center mt-3 text-sm bg-cyan-600 text-white font-bold py-1 px-3 rounded-md hover:bg-cyan-500 transition-colors">Book Selected <ExternalLinkIcon className="w-4 h-4 ml-2"/></a>
                             </div>
                              <div>
-                                <h4 className="font-semibold text-slate-300 mb-2">Inbound Options</h4>
+                                <h4 className="font-bold text-slate-300 mb-2">Inbound Options</h4>
                                 <div className="space-y-2">
                                     {itineraryData.flights.inboundOptions.map(flight => (
                                         <FlightOptionCard key={`${flight.flightNumber}-${flight.departureTime}`} flight={flight} isSelected={selectedFlights.inbound?.flightNumber === flight.flightNumber && selectedFlights.inbound?.departureTime === flight.departureTime} onSelect={() => onFlightSelect(flight, 'inbound')} currencySymbol={currencySymbol} />
@@ -207,33 +257,62 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
                         </div>
                     </div>
                 )}
-                {itineraryData.accommodation && itineraryData.accommodation.length > 0 && (
+                {itineraryData.railways && (
                     <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
                         <div className="flex items-center mb-4">
-                            <BedIcon className="w-8 h-8 text-cyan-400 mr-4"/>
-                            <h3 className="text-2xl font-bold text-white">Accommodation</h3>
+                            <RailwayIcon className="w-8 h-8 text-cyan-400 mr-4"/>
+                            <h3 className="text-2xl font-bold text-white">Railways</h3>
                         </div>
                         <div className="space-y-4">
-                            {itineraryData.accommodation.map(locGroup => (
-                                <div key={locGroup.location}>
-                                    <h4 className="font-semibold text-slate-300 mb-2">{locGroup.location}</h4>
-                                    <div className="space-y-2">
-                                        {locGroup.options.map(option => (
-                                            <AccommodationOptionCard 
-                                                key={option.name}
-                                                accommodation={option}
-                                                isSelected={selectedAccommodations[locGroup.location]?.name === option.name}
-                                                onSelect={() => onAccommodationSelect(option, locGroup.location)}
-                                                currencySymbol={currencySymbol}
-                                            />
-                                        ))}
-                                    </div>
+                            <div>
+                                <h4 className="font-bold text-slate-300 mb-2">Outbound Options</h4>
+                                <div className="space-y-2">
+                                    {itineraryData.railways.outboundOptions.map(rail => (
+                                        <RailwayOptionCard key={`${rail.trainNumber}-${rail.departureTime}`} railway={rail} isSelected={selectedRailways.outbound?.trainNumber === rail.trainNumber && selectedRailways.outbound?.departureTime === rail.departureTime} onSelect={() => onRailwaySelect(rail, 'outbound')} currencySymbol={currencySymbol} />
+                                    ))}
                                 </div>
-                            ))}
+                                <a href={outboundRailwayBookingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center mt-3 text-sm bg-cyan-600 text-white font-bold py-1 px-3 rounded-md hover:bg-cyan-500 transition-colors">Book Selected <ExternalLinkIcon className="w-4 h-4 ml-2"/></a>
+                            </div>
+                             <div>
+                                <h4 className="font-bold text-slate-300 mb-2">Inbound Options</h4>
+                                <div className="space-y-2">
+                                    {itineraryData.railways.inboundOptions.map(rail => (
+                                        <RailwayOptionCard key={`${rail.trainNumber}-${rail.departureTime}`} railway={rail} isSelected={selectedRailways.inbound?.trainNumber === rail.trainNumber && selectedRailways.inbound?.departureTime === rail.departureTime} onSelect={() => onRailwaySelect(rail, 'inbound')} currencySymbol={currencySymbol} />
+                                    ))}
+                                </div>
+                                <a href={inboundRailwayBookingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center mt-3 text-sm bg-cyan-600 text-white font-bold py-1 px-3 rounded-md hover:bg-cyan-500 transition-colors">Book Selected <ExternalLinkIcon className="w-4 h-4 ml-2"/></a>
+                            </div>
                         </div>
                     </div>
                 )}
             </div>
+
+            {itineraryData.accommodation && itineraryData.accommodation.length > 0 && (
+                <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
+                    <div className="flex items-center mb-4">
+                        <BedIcon className="w-8 h-8 text-cyan-400 mr-4"/>
+                        <h3 className="text-2xl font-bold text-white">Accommodation</h3>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        {itineraryData.accommodation.map(locGroup => (
+                            <div key={locGroup.location}>
+                                <h4 className="font-semibold text-slate-300 mb-2">{locGroup.location}</h4>
+                                <div className="space-y-2">
+                                    {locGroup.options.map(option => (
+                                        <AccommodationOptionCard 
+                                            key={option.name}
+                                            accommodation={option}
+                                            isSelected={selectedAccommodations[locGroup.location]?.name === option.name}
+                                            onSelect={() => onAccommodationSelect(option, locGroup.location)}
+                                            currencySymbol={currencySymbol}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
             
             {itineraryData.tripEssentials && (
               <div className="space-y-4">
@@ -283,7 +362,7 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
                                         <p className="text-sm text-slate-400">{formatDate(dayPlan.date)}</p>
                                     </div>
                                 </div>
-                                <svg className={`w-6 h-6 text-slate-400 transition-transform ${openDay === dayPlan.day ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className={`w-6 h-6 text-slate-400 transition-transform ${openDay === dayPlan.day || expandAllForPdf ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>

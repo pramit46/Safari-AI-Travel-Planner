@@ -8,6 +8,16 @@ export const PlaneIcon = ({ className = 'w-6 h-6' }: { className?: string }) => 
     </svg>
 );
 
+export const RailwayIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12 3a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z" />
+      <path fillRule="evenodd" d="M8.25 3.75a.75.75 0 0 1 .75.75v14.25a.75.75 0 0 1-1.5 0V4.5a.75.75 0 0 1 .75-.75Zm7.5 0a.75.75 0 0 1 .75.75v14.25a.75.75 0 0 1-1.5 0V4.5a.75.75 0 0 1 .75-.75Z" clipRule="evenodd" />
+      <path d="M12 21a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+      <path fillRule="evenodd" d="M3 6.345a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Zm0 11.31a.75.75 0 0 1 .75-.75h16.5a.75.75 0 0 1 0 1.5H3.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
+      <path d="M12 9a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm0 5.25a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z" />
+    </svg>
+);
+
 export const BedIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
         <path d="M7 7h10v3l-5 2-5-2V7Z" />
