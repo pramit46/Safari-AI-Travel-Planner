@@ -6,6 +6,7 @@ import ItineraryDisplay from './components/ItineraryDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
 import EmptyState from './components/EmptyState';
 import TripSuggestions from './components/TripSuggestions';
+import { SafariLogoIcon } from './components/IconComponents';
 
 const App: React.FC = () => {
     const [prompt, setPrompt] = useState('');
@@ -29,11 +30,12 @@ const App: React.FC = () => {
     ];
 
     useEffect(() => {
-        let interval: NodeJS.Timeout | undefined;
+        // FIX: Use `number` for interval ID in browser environments instead of `NodeJS.Timeout`.
+        let interval: number | undefined;
         if (isLoading) {
             setLoadingStatus(loadingMessages[0]);
             let i = 1;
-            interval = setInterval(() => {
+            interval = window.setInterval(() => {
                 setLoadingStatus(loadingMessages[i % loadingMessages.length]);
                 i++;
             }, 3000);
@@ -49,7 +51,8 @@ const App: React.FC = () => {
         if (baseCost > 0 && Object.values(selectedAccommodations).every(Boolean)) {
             const flightCost = (selectedFlights.outbound?.price || 0) + (selectedFlights.inbound?.price || 0);
             const railwayCost = (selectedRailways.outbound?.price || 0) + (selectedRailways.inbound?.price || 0);
-            const accommodationCost = Object.values(selectedAccommodations).reduce((sum, acc) => sum + (acc?.totalPrice || 0), 0);
+            // FIX: Explicitly type the accumulator ('sum') to prevent it from being inferred as 'unknown'.
+            const accommodationCost = Object.values(selectedAccommodations).reduce((sum: number, acc: AccommodationInfo | null) => sum + (acc?.totalPrice || 0), 0);
             const newTotal = baseCost + flightCost + railwayCost + accommodationCost;
             setDynamicTotalCost(newTotal);
         }
@@ -88,7 +91,8 @@ const App: React.FC = () => {
                 // Calculate base cost (total cost - transport - accommodation)
                 const flightCost = (cheapestOutboundFlight?.price || 0) + (cheapestInboundFlight?.price || 0);
                 const railwayCost = (cheapestOutboundRailway?.price || 0) + (cheapestInboundRailway?.price || 0);
-                const accommodationCost = Object.values(initialSelections).reduce((sum, acc) => sum + (acc?.totalPrice || 0), 0);
+                // FIX: Explicitly type the accumulator ('sum') to prevent it from being inferred as 'unknown'.
+                const accommodationCost = Object.values(initialSelections).reduce((sum: number, acc: AccommodationInfo | null) => sum + (acc?.totalPrice || 0), 0);
                 const calculatedBaseCost = initialItinerary.totalEstimatedCost - flightCost - railwayCost - accommodationCost;
                 
                 setBaseCost(calculatedBaseCost);
@@ -148,6 +152,7 @@ const App: React.FC = () => {
         <div className="text-slate-300 min-h-screen font-sans">
             <main className="container mx-auto px-4 py-8 max-w-4xl">
                 <header className="text-center mb-8">
+                    <SafariLogoIcon className="w-24 h-24 mx-auto mb-4 text-cyan-400" />
                     <h1 className="text-5xl font-extrabold text-white [text-shadow:1px_1px_3px_rgba(0,0,0,0.7)]">
                         <span className="text-cyan-400">Safari</span> Travel Planner
                     </h1>

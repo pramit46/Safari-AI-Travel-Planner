@@ -1,5 +1,31 @@
 import React from 'react';
 
+export const SafariLogoIcon = ({ className = 'w-16 h-16' }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor" className={className}>
+      {/* Outer ring */}
+      <path d="M32,5C17.1,5,5,17.1,5,32s12.1,27,27,27s27-12.1,27-27S46.9,5,32,5z M32,55C19.3,55,9,44.7,9,32 S19.3,9,32,9s23,10.3,23,23S44.7,55,32,55z"/>
+      
+      {/* Subtle Marks */}
+      <g opacity="0.4">
+          <path d="M32 12 L36 20 L28 20 Z" /> {/* North */}
+          <path d="M44 28 L52 32 L44 36 Z" /> {/* East */}
+          <path d="M36 44 L32 52 L28 44 Z" /> {/* South */}
+          <path d="M20 36 L12 32 L20 28 Z" /> {/* West */}
+      </g>
+      
+      {/* Needle Group - Rotated to NE */}
+      <g transform="rotate(45 32 32)">
+        {/* North-pointing part (Cyan) */}
+        <path fill="#06b6d4" d="M32 14 L38 32 L26 32 Z" />
+        {/* South-pointing part (White) */}
+        <path fill="#f1f5f9" d="M32 50 L38 32 L26 32 Z" />
+      </g>
+      
+      {/* Center Pin */}
+      <circle cx="32" cy="32" r="3" fill="currentColor" />
+    </svg>
+);
+
 export const PlaneIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
       <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
@@ -61,9 +87,9 @@ export const DownloadIcon = ({ className = 'w-5 h-5' }: { className?: string }) 
     </svg>
 );
 
-export const ResetIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
+export const NewPlanIcon = ({ className = 'w-5 h-5' }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className={className}>
-      <path fillRule="evenodd" d="M15.312 11.342a3.999 3.999 0 0 1-4.214 5.39L10 16.031l-1.1.701a3.999 3.999 0 1 1 4.153-5.542.75.75 0 0 1-1.238-.854A5.5 5.5 0 1 0 10 17.5a.75.75 0 0 1 0-1.5 4 4 0 0 1 0-8 .75.75 0 0 1 .75.75v3.088l-1.53-1.53a.75.75 0 0 1 1.06-1.06l3.47 3.47a.75.75 0 0 1 0 1.06l-3.47 3.47a.75.75 0 0 1-1.06-1.06l1.53-1.53V8.5a2.5 2.5 0 1 0-5 0v.75a.75.75 0 0 1-1.5 0V8.5a4 4 0 1 1 8 0v2.842Z" clipRule="evenodd" />
+      <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.621a1.5 1.5 0 0 0-.44-1.06l-4.12-4.122A1.5 1.5 0 0 0 11.378 2H4.5ZM10 8a.75.75 0 0 1 .75.75v1.5h1.5a.75.75 0 0 1 0 1.5h-1.5v1.5a.75.75 0 0 1-1.5 0v-1.5h-1.5a.75.75 0 0 1 0-1.5h1.5V8.75A.75.75 0 0 1 10 8Z" clipRule="evenodd" />
     </svg>
 );
 

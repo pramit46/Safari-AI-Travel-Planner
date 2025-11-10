@@ -2,6 +2,12 @@ import { Type } from "@google/genai";
 
 export const travelAgentSystemInstruction = `You are a master travel agent orchestrating a team of specialist agents. Your output MUST be a complete, logical, and budget-conscious travel itinerary. You will follow a strict, multi-step reasoning process. Deviation from this process is a critical failure.
 
+**CORE DIRECTIVE: AVOID HALLUCINATION. PRIORITIZE REALISM AND VERIFIABILITY.**
+- **You do NOT have access to real-time flight, train, or hotel booking systems.** Do not invent specific flight numbers, train numbers, or precise, non-verifiable prices.
+- **Your Role:** You are a *planner*, not a booking engine. Your goal is to provide a realistic, well-structured travel plan with verifiable links.
+- **Transport Details:** For flights and trains, provide representative airlines/providers for the route. Prices should be reasonable **estimates**. The most critical field is the 'bookingLink', which **MUST** be a valid Google Search URL (e.g., Google Flights, Google Search for trains) that allows the user to find real-time options. It is a CRITICAL FAILURE to invent a direct booking link to an airline's website.
+- **Accommodation:** Follow the same principle for booking links. Provide a Google Search link if a direct link to a major booking platform isn't known and verifiable.
+
 **CRITICAL REASONING PROCESS:**
 
 **Step 1: Analyze Core Request & Budget.**
@@ -39,11 +45,11 @@ export const flightAgentSchema = {
                     departureAirport: { type: Type.STRING, description: "3-letter IATA code for the departure airport." },
                     arrivalAirport: { type: Type.STRING, description: "3-letter IATA code for the arrival airport." },
                     airline: { type: Type.STRING },
-                    flightNumber: { type: Type.STRING },
+                    flightNumber: { type: Type.STRING, description: "A representative flight number for the airline and route. e.g., 'AI-101'." },
                     departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
-                    price: { type: Type.NUMBER, description: "Price of the flight ticket." },
-                    bookingLink: { type: Type.STRING, description: "A direct, working link to book the flight, or a Google Flights search URL as a fallback." },
+                    price: { type: Type.NUMBER, description: "Estimated price of the flight ticket for one adult." },
+                    bookingLink: { type: Type.STRING, description: "CRITICAL: MUST be a valid Google Flights search URL. Example: 'https://www.google.com/flights?q=flights+from+DEL+to+IXB'. Do NOT invent direct booking links." },
                     seatType: { type: Type.STRING, description: "The class of the seat, determined by the trip's budget. e.g., 'Economy', 'Business'."}
                 },
                 required: ['departureAirport', 'arrivalAirport', 'airline', 'flightNumber', 'departureTime', 'arrivalTime', 'price', 'bookingLink', 'seatType']
@@ -58,11 +64,11 @@ export const flightAgentSchema = {
                     departureAirport: { type: Type.STRING, description: "3-letter IATA code for the departure airport." },
                     arrivalAirport: { type: Type.STRING, description: "3-letter IATA code for the arrival airport." },
                     airline: { type: Type.STRING },
-                    flightNumber: { type: Type.STRING },
+                    flightNumber: { type: Type.STRING, description: "A representative flight number for the airline and route. e.g., 'AI-102'." },
                     departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
-                    price: { type: Type.NUMBER, description: "Price of the flight ticket." },
-                    bookingLink: { type: Type.STRING, description: "A direct, working link to book the flight, or a Google Flights search URL as a fallback." },
+                    price: { type: Type.NUMBER, description: "Estimated price of the flight ticket for one adult." },
+                    bookingLink: { type: Type.STRING, description: "CRITICAL: MUST be a valid Google Flights search URL. Example: 'https://www.google.com/flights?q=flights+from+IXB+to+DEL'. Do NOT invent direct booking links." },
                     seatType: { type: Type.STRING, description: "The class of the seat, determined by the trip's budget. e.g., 'Economy', 'Business'."}
                 },
                 required: ['departureAirport', 'arrivalAirport', 'airline', 'flightNumber', 'departureTime', 'arrivalTime', 'price', 'bookingLink', 'seatType']
@@ -85,11 +91,11 @@ export const railwayAgentSchema = {
                     departureStation: { type: Type.STRING },
                     arrivalStation: { type: Type.STRING },
                     trainProvider: { type: Type.STRING },
-                    trainNumber: { type: Type.STRING },
+                    trainNumber: { type: Type.STRING, description: "A representative train number for the route." },
                     departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
-                    price: { type: Type.NUMBER, description: "Price of the train ticket." },
-                    bookingLink: { type: Type.STRING, description: "A direct, working link to book the train ticket, or a Google search URL as a fallback." },
+                    price: { type: Type.NUMBER, description: "Estimated price of the train ticket." },
+                    bookingLink: { type: Type.STRING, description: "CRITICAL: MUST be a valid Google Search URL for the train route. Example: 'https://www.google.com/search?q=trains+from+New+Jalpaiguri+to+Sealdah'. Do NOT invent direct booking links." },
                     berthType: { type: Type.STRING, description: "The class of the berth, determined by the trip's budget. e.g., 'Sleeper', '3AC', '2AC', 'CC'."}
                 },
                 required: ['departureStation', 'arrivalStation', 'trainProvider', 'trainNumber', 'departureTime', 'arrivalTime', 'price', 'bookingLink', 'berthType']
@@ -104,11 +110,11 @@ export const railwayAgentSchema = {
                     departureStation: { type: Type.STRING },
                     arrivalStation: { type: Type.STRING },
                     trainProvider: { type: Type.STRING },
-                    trainNumber: { type: Type.STRING },
+                    trainNumber: { type: Type.STRING, description: "A representative train number for the route." },
                     departureTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
                     arrivalTime: { type: Type.STRING, description: "ISO 8601 format date-time string." },
-                    price: { type: Type.NUMBER, description: "Price of the train ticket." },
-                    bookingLink: { type: Type.STRING, description: "A direct, working link to book the train ticket, or a Google search URL as a fallback." },
+                    price: { type: Type.NUMBER, description: "Estimated price of the train ticket." },
+                    bookingLink: { type: Type.STRING, description: "CRITICAL: MUST be a valid Google Search URL for the train route. Example: 'https://www.google.com/search?q=trains+from+Sealdah+to+New+Jalpaiguri'. Do NOT invent direct booking links." },
                     berthType: { type: Type.STRING, description: "The class of the berth, determined by the trip's budget. e.g., 'Sleeper', '3AC', '2AC', 'CC'."}
                 },
                 required: ['departureStation', 'arrivalStation', 'trainProvider', 'trainNumber', 'departureTime', 'arrivalTime', 'price', 'bookingLink', 'berthType']

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ItineraryOption, Activity, FlightInfo, AccommodationInfo, RailwayInfo } from '../types';
-import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon, RailwayIcon, ResetIcon } from './IconComponents';
+import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon, RailwayIcon, NewPlanIcon } from './IconComponents';
 
 // Add type definitions for the CDN libraries to the window object
 declare global {
@@ -256,7 +256,7 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
                         title="New Search"
                         className="p-3 bg-slate-700 rounded-full text-slate-200 hover:text-white hover:bg-slate-600 transition-colors"
                     >
-                        <ResetIcon className="w-8 h-8" />
+                        <NewPlanIcon className="w-8 h-8" />
                     </button>
                 </div>
             </header>
@@ -268,6 +268,9 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
                             <PlaneIcon className="w-8 h-8 text-cyan-400 mr-4"/>
                             <h3 className="text-2xl font-bold text-white">Flights</h3>
                         </div>
+                        <p className="text-xs text-slate-500 -mt-2 mb-4">
+                            Flight details are AI-generated estimates. Use the 'Book' link for live prices and availability.
+                        </p>
                         <div className="space-y-4">
                             <div>
                                 <h4 className="font-bold text-slate-300 mb-2"><span className="text-cyan-400">Outbound</span> Options</h4>
@@ -296,6 +299,9 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
                             <RailwayIcon className="w-8 h-8 text-cyan-400 mr-4"/>
                             <h3 className="text-2xl font-bold text-white">Railways</h3>
                         </div>
+                        <p className="text-xs text-slate-500 -mt-2 mb-4">
+                            Train details are AI-generated estimates. Use the 'Book' link for live schedules and booking.
+                        </p>
                         <div className="space-y-4">
                             <div>
                                 <h4 className="font-bold text-slate-300 mb-2"><span className="text-cyan-400">Outbound</span> Options</h4>
