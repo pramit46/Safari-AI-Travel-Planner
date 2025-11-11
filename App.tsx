@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ItineraryOption, FlightInfo, AccommodationInfo, RailwayInfo } from './types';
 import { generateItinerary } from './services/geminiService';
+import { getCapitalFromTimezone } from './services/locationService';
 import TripInput from './components/TripInput';
 import ItineraryDisplay from './components/ItineraryDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -63,8 +64,31 @@ const App: React.FC = () => {
         setIsLoading(true);
         setError(null);
         setItinerary(null);
+        
+        let finalPrompt = currentPrompt;
+
         try {
-            const result = await generateItinerary(currentPrompt);
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    return reject(new Error("Geolocation is not supported by this browser."));
+                }
+                // Set a timeout to avoid waiting forever
+                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+            });
+
+            const { latitude, longitude } = position.coords;
+            finalPrompt = `${currentPrompt}\n\n[System Note: User's current location is Latitude: ${latitude}, Longitude: ${longitude}. Please use this as the starting point for the trip if no other origin is specified in the prompt.]`;
+        } catch (locationError) {
+            console.warn("Could not get user location. Attempting to infer from timezone.", locationError);
+            const inferredCapital = getCapitalFromTimezone();
+            if (inferredCapital) {
+                 finalPrompt = `${currentPrompt}\n\n[System Note: User location access denied. Inferred start location from timezone is ${inferredCapital}. Use this as the trip's origin if not otherwise specified.]`;
+            }
+            // Silently fail and proceed if timezone also fails. The model will handle it.
+        }
+
+        try {
+            const result = await generateItinerary(finalPrompt);
             if (result.itineraries && result.itineraries.length > 0) {
                 const initialItinerary = result.itineraries[0];
                 setItinerary(initialItinerary);
