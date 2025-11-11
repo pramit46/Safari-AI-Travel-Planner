@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ItineraryOption, Activity, FlightInfo, AccommodationInfo, RailwayInfo } from '../types';
-import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon, RailwayIcon, NewPlanIcon } from './IconComponents';
+import { PlaneIcon, BedIcon, SightseeingIcon, MealIcon, TravelIcon, OtherIcon, ExternalLinkIcon, DownloadIcon, WeatherIcon, ClothingIcon, WarningIcon, RailwayIcon, NewPlanIcon, InfoIcon } from './IconComponents';
 
 // Add type definitions for the CDN libraries to the window object
 declare global {
@@ -53,7 +53,15 @@ const FlightOptionCard: React.FC<{ flight: FlightInfo, isSelected: boolean, onSe
                  <span className="font-semibold text-slate-200">{flight.airline}</span>
                  <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">{flight.seatType}</span>
             </div>
-            <span className="font-bold text-white">{currencySymbol}{flight.price.toLocaleString()}</span>
+            <div className="flex items-center gap-1">
+                <span className="font-bold text-white">{currencySymbol}{flight.price.toLocaleString()}</span>
+                <div className="group relative flex items-center">
+                    <InfoIcon className="w-4 h-4 text-slate-500 cursor-help" />
+                    <div className="absolute bottom-full mb-2 right-1/2 translate-x-1/2 w-48 p-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 text-center">
+                        Price is an AI-generated estimate. Please verify.
+                    </div>
+                </div>
+            </div>
         </div>
         <p className="text-sm text-slate-400 mt-1">
             <span className="font-bold text-cyan-400">{flight.departureAirport}</span> → <span className="font-bold text-cyan-400">{flight.arrivalAirport}</span>
@@ -73,7 +81,15 @@ const RailwayOptionCard: React.FC<{ railway: RailwayInfo, isSelected: boolean, o
                 <span className="font-semibold text-slate-200">{railway.trainProvider}</span>
                 <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">{railway.berthType}</span>
             </div>
-            <span className="font-bold text-white">{currencySymbol}{railway.price.toLocaleString()}</span>
+            <div className="flex items-center gap-1">
+                <span className="font-bold text-white">{currencySymbol}{railway.price.toLocaleString()}</span>
+                 <div className="group relative flex items-center">
+                    <InfoIcon className="w-4 h-4 text-slate-500 cursor-help" />
+                    <div className="absolute bottom-full mb-2 right-1/2 translate-x-1/2 w-48 p-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 text-center">
+                        Price is an AI-generated estimate. Please verify.
+                    </div>
+                </div>
+            </div>
         </div>
         <p className="text-sm text-slate-400 mt-1 truncate">
             <span className="font-bold text-cyan-400">{railway.departureStation}</span> → <span className="font-bold text-cyan-400">{railway.arrivalStation}</span>
@@ -133,7 +149,15 @@ const AccommodationOptionCard: React.FC<{ accommodation: AccommodationInfo, isSe
                     )}
                 </div>
                 <div className="text-right flex-shrink-0 ml-2">
-                    <p className="font-bold text-white">{currencySymbol}{accommodation.totalPrice.toLocaleString()}</p>
+                    <div className="flex items-center justify-end gap-1">
+                        <p className="font-bold text-white">{currencySymbol}{accommodation.totalPrice.toLocaleString()}</p>
+                        <div className="group relative flex items-center">
+                            <InfoIcon className="w-4 h-4 text-slate-500 cursor-help" />
+                             <div className="absolute bottom-full mb-2 right-1/2 translate-x-1/2 w-48 p-2 bg-slate-900 border border-slate-700 rounded-lg shadow-xl text-xs text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none z-10 text-center">
+                                Price is an AI-generated estimate. Please verify.
+                            </div>
+                        </div>
+                    </div>
                     <p className="text-xs text-slate-500">{currencySymbol}{accommodation.pricePerNight.toLocaleString()}/night</p>
                 </div>
             </div>
@@ -191,246 +215,4 @@ const ItineraryDisplay: React.FC<ItineraryDisplayProps> = ({ itineraryData, sele
                     const pdfWidth = pdf.internal.pageSize.getWidth();
                     const canvasWidth = canvas.width;
                     const canvasHeight = canvas.height;
-                    const ratio = canvasWidth / canvasHeight;
-                    const imgHeight = pdfWidth / ratio;
-                    
-                    let heightLeft = imgHeight;
-                    let position = 0;
-                    
-                    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                    heightLeft -= pdf.internal.pageSize.getHeight();
-
-                    while (heightLeft > 0) {
-                        position = heightLeft - imgHeight;
-                        pdf.addPage();
-                        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-                        heightLeft -= pdf.internal.pageSize.getHeight();
-                    }
-
-                    pdf.save(`safari-trip-planner-${itineraryData.title.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.pdf`);
-                }).finally(() => {
-                    setExpandAllForPdf(false);
-                    setIsDownloading(false);
-                });
-            }, 100);
-        }
-    }, [expandAllForPdf, itineraryData.title]);
-    
-    const outboundBookingLink = selectedFlights.outbound?.bookingLink || `https://www.google.com/flights?q=flights+from+${encodeURIComponent(selectedFlights.outbound?.departureAirport || '')}+to+${encodeURIComponent(selectedFlights.outbound?.arrivalAirport || '')}`;
-    const inboundBookingLink = selectedFlights.inbound?.bookingLink || `https://www.google.com/flights?q=flights+from+${encodeURIComponent(selectedFlights.inbound?.departureAirport || '')}+to+${encodeURIComponent(selectedFlights.inbound?.arrivalAirport || '')}`;
-    
-    const outboundRailwayBookingLink = selectedRailways.outbound?.bookingLink || `https://www.google.com/search?q=trains+from+${encodeURIComponent(selectedRailways.outbound?.departureStation || '')}+to+${encodeURIComponent(selectedRailways.outbound?.arrivalStation || '')}`;
-    const inboundRailwayBookingLink = selectedRailways.inbound?.bookingLink || `https://www.google.com/search?q=trains+from+${encodeURIComponent(selectedRailways.inbound?.departureStation || '')}+to+${encodeURIComponent(selectedRailways.inbound?.arrivalStation || '')}`;
-
-    const showFlights = itineraryData.flights && itineraryData.flights.outboundOptions.length > 0;
-    const showRailways = itineraryData.railways && itineraryData.railways.outboundOptions.length > 0;
-
-
-    return (
-        <div className="w-full space-y-8 animate-fade-in" ref={itineraryRef}>
-            <header className="flex justify-between items-start gap-4">
-                <div className="w-32 flex-shrink-0"></div>
-                <div className="text-center min-w-0 flex-1">
-                    <h2 className="text-4xl font-extrabold text-white leading-tight" title={itineraryData.title}>
-                        {itineraryData.title}
-                    </h2>
-                    <p className="text-xl text-cyan-400 font-medium mt-2">
-                        Total Estimated Cost: {currencySymbol}{dynamicTotalCost?.toLocaleString()}
-                    </p>
-                </div>
-                <div className="w-32 flex-shrink-0 flex justify-end items-center gap-4">
-                     <button 
-                        onClick={handleDownloadPdf} 
-                        disabled={isDownloading}
-                        title={isDownloading ? "Downloading..." : "Download Plan"}
-                        className="p-3 bg-slate-700 rounded-full text-slate-200 hover:text-white hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-wait transition-colors"
-                    >
-                        {isDownloading ? (
-                            <div className="w-8 h-8 border-4 border-t-4 border-slate-500 border-t-white rounded-full animate-spin"></div>
-                        ) : (
-                            <DownloadIcon className="w-8 h-8" />
-                        )}
-                    </button>
-                    <button
-                        onClick={onReset}
-                        title="New Search"
-                        className="p-3 bg-slate-700 rounded-full text-slate-200 hover:text-white hover:bg-slate-600 transition-colors"
-                    >
-                        <NewPlanIcon className="w-8 h-8" />
-                    </button>
-                </div>
-            </header>
-
-            <div className="grid md:grid-cols-2 gap-6">
-                {showFlights && (
-                    <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
-                        <div className="flex items-center mb-4">
-                            <PlaneIcon className="w-8 h-8 text-cyan-400 mr-4"/>
-                            <h3 className="text-2xl font-bold text-white">Flights</h3>
-                        </div>
-                        <p className="text-xs text-slate-500 -mt-2 mb-4">
-                            Flight details are AI-generated estimates. Use the 'Book' link for live prices and availability.
-                        </p>
-                        <div className="space-y-4">
-                            <div>
-                                <h4 className="font-bold text-slate-300 mb-2"><span className="text-cyan-400">Outbound</span> Options</h4>
-                                <div className="space-y-2">
-                                    {itineraryData.flights.outboundOptions.map(flight => (
-                                        <FlightOptionCard key={`${flight.flightNumber}-${flight.departureTime}`} flight={flight} isSelected={selectedFlights.outbound?.flightNumber === flight.flightNumber && selectedFlights.outbound?.departureTime === flight.departureTime} onSelect={() => onFlightSelect(flight, 'outbound')} currencySymbol={currencySymbol} />
-                                    ))}
-                                </div>
-                                 <a href={outboundBookingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center mt-3 text-sm bg-cyan-600 text-white font-bold py-1 px-3 rounded-md hover:bg-cyan-500 transition-colors">Book Selected <ExternalLinkIcon className="w-4 h-4 ml-2"/></a>
-                            </div>
-                             <div>
-                                <h4 className="font-bold text-slate-300 mb-2"><span className="text-cyan-400">Inbound</span> Options</h4>
-                                <div className="space-y-2">
-                                    {itineraryData.flights.inboundOptions.map(flight => (
-                                        <FlightOptionCard key={`${flight.flightNumber}-${flight.departureTime}`} flight={flight} isSelected={selectedFlights.inbound?.flightNumber === flight.flightNumber && selectedFlights.inbound?.departureTime === flight.departureTime} onSelect={() => onFlightSelect(flight, 'inbound')} currencySymbol={currencySymbol} />
-                                    ))}
-                                </div>
-                                <a href={inboundBookingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center mt-3 text-sm bg-cyan-600 text-white font-bold py-1 px-3 rounded-md hover:bg-cyan-500 transition-colors">Book Selected <ExternalLinkIcon className="w-4 h-4 ml-2"/></a>
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {showRailways && (
-                    <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
-                        <div className="flex items-center mb-4">
-                            <RailwayIcon className="w-8 h-8 text-cyan-400 mr-4"/>
-                            <h3 className="text-2xl font-bold text-white">Railways</h3>
-                        </div>
-                        <p className="text-xs text-slate-500 -mt-2 mb-4">
-                            Train details are AI-generated estimates. Use the 'Book' link for live schedules and booking.
-                        </p>
-                        <div className="space-y-4">
-                            <div>
-                                <h4 className="font-bold text-slate-300 mb-2"><span className="text-cyan-400">Outbound</span> Options</h4>
-                                <div className="space-y-2">
-                                    {itineraryData.railways.outboundOptions.map(rail => (
-                                        <RailwayOptionCard key={`${rail.trainNumber}-${rail.departureTime}`} railway={rail} isSelected={selectedRailways.outbound?.trainNumber === rail.trainNumber && selectedRailways.outbound?.departureTime === rail.departureTime} onSelect={() => onRailwaySelect(rail, 'outbound')} currencySymbol={currencySymbol} />
-                                    ))}
-                                </div>
-                                <a href={outboundRailwayBookingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center mt-3 text-sm bg-cyan-600 text-white font-bold py-1 px-3 rounded-md hover:bg-cyan-500 transition-colors">Book Selected <ExternalLinkIcon className="w-4 h-4 ml-2"/></a>
-                            </div>
-                             <div>
-                                <h4 className="font-bold text-slate-300 mb-2"><span className="text-cyan-400">Inbound</span> Options</h4>
-                                <div className="space-y-2">
-                                    {itineraryData.railways.inboundOptions.map(rail => (
-                                        <RailwayOptionCard key={`${rail.trainNumber}-${rail.departureTime}`} railway={rail} isSelected={selectedRailways.inbound?.trainNumber === rail.trainNumber && selectedRailways.inbound?.departureTime === rail.departureTime} onSelect={() => onRailwaySelect(rail, 'inbound')} currencySymbol={currencySymbol} />
-                                    ))}
-                                </div>
-                                <a href={inboundRailwayBookingLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center mt-3 text-sm bg-cyan-600 text-white font-bold py-1 px-3 rounded-md hover:bg-cyan-500 transition-colors">Book Selected <ExternalLinkIcon className="w-4 h-4 ml-2"/></a>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {itineraryData.accommodation && itineraryData.accommodation.length > 0 && (
-                <div className="bg-slate-800 p-6 rounded-xl shadow-lg border border-slate-700">
-                    <div className="flex items-center mb-4">
-                        <BedIcon className="w-8 h-8 text-cyan-400 mr-4"/>
-                        <h3 className="text-2xl font-bold text-white">Accommodation</h3>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        {itineraryData.accommodation.map(locGroup => (
-                            <div key={locGroup.location}>
-                                <h4 className="font-semibold text-slate-300 mb-2">{locGroup.location}</h4>
-                                <div className="space-y-2">
-                                    {locGroup.options.map(option => (
-                                        <AccommodationOptionCard 
-                                            key={option.name}
-                                            accommodation={option}
-                                            isSelected={selectedAccommodations[locGroup.location]?.name === option.name}
-                                            onSelect={() => onAccommodationSelect(option, locGroup.location)}
-                                            currencySymbol={currencySymbol}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-            
-            {itineraryData.tripEssentials && (
-              <div className="space-y-4">
-                  <h3 className="text-3xl font-bold text-white text-center">Trip Essentials</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                      {itineraryData.tripEssentials.weatherInfo && (
-                          <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex">
-                              <WeatherIcon className="w-8 h-8 text-cyan-400 mr-4 mt-1 flex-shrink-0"/>
-                              <div>
-                                  <h4 className="font-bold text-white">Weather</h4>
-                                  <p className="text-sm text-slate-400">{itineraryData.tripEssentials.weatherInfo}</p>
-                              </div>
-                          </div>
-                      )}
-                      {itineraryData.tripEssentials.clothingSuggestions && (
-                           <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex">
-                              <ClothingIcon className="w-8 h-8 text-cyan-400 mr-4 mt-1 flex-shrink-0"/>
-                              <div>
-                                  <h4 className="font-bold text-white">What to Pack</h4>
-                                  <p className="text-sm text-slate-400">{itineraryData.tripEssentials.clothingSuggestions}</p>
-                              </div>
-                          </div>
-                      )}
-                  </div>
-                  {itineraryData.tripEssentials.travelWarnings && (
-                      <div className="bg-amber-900/50 p-4 rounded-xl border border-amber-700 flex">
-                          <WarningIcon className="w-8 h-8 text-amber-400 mr-4 mt-1 flex-shrink-0"/>
-                          <div>
-                              <h4 className="font-bold text-amber-300">Travel Advisory</h4>
-                              <p className="text-sm text-amber-300/80">{itineraryData.tripEssentials.travelWarnings}</p>
-                          </div>
-                      </div>
-                  )}
-              </div>
-            )}
-
-            <div>
-                <h3 className="text-3xl font-bold text-white mb-6 text-center">Daily Itinerary</h3>
-                <div className="space-y-4">
-                    {itineraryData.dailyPlan && itineraryData.dailyPlan.map(dayPlan => (
-                        <div key={dayPlan.day} className="bg-slate-800 rounded-xl shadow-lg border border-slate-700 overflow-hidden">
-                            <button onClick={() => toggleDay(dayPlan.day)} className="w-full p-4 text-left flex justify-between items-center bg-slate-700/50 hover:bg-slate-700 transition-colors">
-                                <div className="flex items-center">
-                                    <span className="bg-cyan-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold mr-4">{dayPlan.day}</span>
-                                    <div>
-                                        <h4 className="text-lg font-bold text-white">{dayPlan.title}</h4>
-                                        <p className="text-sm text-slate-400">{formatDate(dayPlan.date)}</p>
-                                    </div>
-                                </div>
-                                <svg className={`w-6 h-6 text-slate-400 transition-transform ${openDay === dayPlan.day || expandAllForPdf ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
-                            {(openDay === dayPlan.day || expandAllForPdf) && (
-                                <div className="p-6 border-t border-slate-700 animate-fade-in-down">
-                                    <ul className="space-y-4 relative">
-                                        <div className="absolute left-4 top-2 bottom-2 w-0.5 bg-slate-700"></div>
-                                        {dayPlan.activities && Array.isArray(dayPlan.activities) && dayPlan.activities.map((activity, index) => (
-                                            <li key={index} className="flex items-start pl-10 relative">
-                                                <div className="absolute left-0 top-1 flex items-center">
-                                                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center ring-4 ring-slate-800">
-                                                        <ActivityTypeIcon type={activity.type} />
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-slate-200">{activity.time} - {activity.description}</p>
-                                                    {activity.details && <p className="text-slate-400 text-sm mt-1">{activity.details}</p>}
-                                                </div>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-export default ItineraryDisplay;
+                    const ratio =

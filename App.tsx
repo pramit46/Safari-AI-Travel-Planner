@@ -66,25 +66,28 @@ const App: React.FC = () => {
         setItinerary(null);
         
         let finalPrompt = currentPrompt;
+        const hasSourceLocation = /\b(from|starting in|originating from)\b/i.test(currentPrompt);
 
-        try {
-            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-                if (!navigator.geolocation) {
-                    return reject(new Error("Geolocation is not supported by this browser."));
+        if (!hasSourceLocation) {
+            try {
+                const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+                    if (!navigator.geolocation) {
+                        return reject(new Error("Geolocation is not supported by this browser."));
+                    }
+                    // Set a timeout to avoid waiting forever
+                    navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+                });
+
+                const { latitude, longitude } = position.coords;
+                finalPrompt = `${currentPrompt}\n\n[System Note: User's current location is Latitude: ${latitude}, Longitude: ${longitude}. Please use this as the starting point for the trip if no other origin is specified in the prompt.]`;
+            } catch (locationError) {
+                console.warn("Could not get user location. Attempting to infer from timezone.", locationError);
+                const inferredCapital = getCapitalFromTimezone();
+                if (inferredCapital) {
+                     finalPrompt = `${currentPrompt}\n\n[System Note: User location access denied. Inferred start location from timezone is ${inferredCapital}. Use this as the trip's origin if not otherwise specified.]`;
                 }
-                // Set a timeout to avoid waiting forever
-                navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
-            });
-
-            const { latitude, longitude } = position.coords;
-            finalPrompt = `${currentPrompt}\n\n[System Note: User's current location is Latitude: ${latitude}, Longitude: ${longitude}. Please use this as the starting point for the trip if no other origin is specified in the prompt.]`;
-        } catch (locationError) {
-            console.warn("Could not get user location. Attempting to infer from timezone.", locationError);
-            const inferredCapital = getCapitalFromTimezone();
-            if (inferredCapital) {
-                 finalPrompt = `${currentPrompt}\n\n[System Note: User location access denied. Inferred start location from timezone is ${inferredCapital}. Use this as the trip's origin if not otherwise specified.]`;
+                // Silently fail and proceed if timezone also fails. The model will handle it.
             }
-            // Silently fail and proceed if timezone also fails. The model will handle it.
         }
 
         try {
