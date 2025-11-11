@@ -40,6 +40,23 @@ export const RailwayIcon = ({ className = 'w-6 h-6' }: { className?: string }) =
     </svg>
 );
 
+export const RoadwayIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M3.375 4.5C2.339 4.5 1.5 5.34 1.5 6.375V13.5h12V6.375c0-1.036-.84-1.875-1.875-1.875h-8.25Z" />
+      <path fillRule="evenodd" d="M13.5 15v5.625c0 1.035-.84 1.875-1.875 1.875h-1.5A1.875 1.875 0 0 1 8.25 20.625V15h5.25ZM4.5 15H3v5.625c0 1.036.84 1.875 1.875 1.875h1.5A1.875 1.875 0 0 0 8.25 20.625V15H4.5Z" clipRule="evenodd" />
+      <path d="M15 8.25h5.25a.75.75 0 0 1 .75.75v3a.75.75 0 0 1-.75.75H15V8.25Z" />
+    </svg>
+);
+
+export const OtherTransportIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
+        <path d="M2.25 9.75a.75.75 0 0 1 .75-.75H6v.75a.75.75 0 0 1-1.5 0V9H3a.75.75 0 0 1-.75-.75Z" />
+        <path fillRule="evenodd" d="M18.06 4.138a.75.75 0 0 1 .44 1.312l-4.25 2.5a.75.75 0 0 1-.842-.043l-4.223-3.23a.75.75 0 1 1 .914-1.192l3.41 2.611 3.548-2.096a.75.75 0 0 1 1.004.137ZM1.5 12a.75.75 0 0 1 .75-.75H6v.75a.75.75 0 0 1-1.5 0v-.75H3.75v3.75a.75.75 0 0 0 1.5 0V15H6a.75.75 0 0 1 0 1.5H2.25a.75.75 0 0 1-.75-.75v-3.75Z" clipRule="evenodd" />
+        <path d="M10.722 10.93a.75.75 0 0 0-1.034 1.082l2.25 2.25a.75.75 0 1 0 1.06-1.06l-2.275-2.272ZM15 12a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H15.75a.75.75 0 0 1-.75-.75Zm0 3a.75.75 0 0 1 .75-.75h3.75a.75.75 0 0 1 0 1.5H15.75a.75.75 0 0 1-.75-.75Z" />
+        <path fillRule="evenodd" d="M2.57 20.43a.75.75 0 0 1 1.06 0l2.25-2.25a.75.75 0 1 1 1.06 1.06l-2.25 2.25a.75.75 0 0 1-1.06 0l-2.25-2.25a.75.75 0 1 1 1.06-1.06l1.19 1.19Z" clipRule="evenodd" />
+    </svg>
+);
+
 export const BedIcon = ({ className = 'w-6 h-6' }: { className?: string }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
         <path d="M7 7h10v3l-5 2-5-2V7Z" />

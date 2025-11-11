@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ItineraryOption, FlightInfo, AccommodationInfo, RailwayInfo } from './types';
+import { ItineraryOption, FlightInfo, AccommodationInfo, RailwayInfo, RoadwayInfo, OtherTransportInfo } from './types';
 import { generateItinerary } from './services/geminiService';
 import { getCapitalFromTimezone } from './services/locationService';
 import TripInput from './components/TripInput';
@@ -18,6 +18,8 @@ const App: React.FC = () => {
 
     const [selectedFlights, setSelectedFlights] = useState<{ outbound: FlightInfo | null, inbound: FlightInfo | null }>({ outbound: null, inbound: null });
     const [selectedRailways, setSelectedRailways] = useState<{ outbound: RailwayInfo | null, inbound: RailwayInfo | null }>({ outbound: null, inbound: null });
+    const [selectedRoadways, setSelectedRoadways] = useState<{ outbound: RoadwayInfo | null, inbound: RoadwayInfo | null }>({ outbound: null, inbound: null });
+    const [selectedOtherTransport, setSelectedOtherTransport] = useState<{ outbound: OtherTransportInfo | null, inbound: OtherTransportInfo | null }>({ outbound: null, inbound: null });
     const [selectedAccommodations, setSelectedAccommodations] = useState<{ [location: string]: AccommodationInfo | null }>({});
     const [dynamicTotalCost, setDynamicTotalCost] = useState<number | null>(null);
     const [baseCost, setBaseCost] = useState<number>(0);
@@ -52,12 +54,14 @@ const App: React.FC = () => {
         if (baseCost > 0 && Object.values(selectedAccommodations).every(Boolean)) {
             const flightCost = (selectedFlights.outbound?.price || 0) + (selectedFlights.inbound?.price || 0);
             const railwayCost = (selectedRailways.outbound?.price || 0) + (selectedRailways.inbound?.price || 0);
+            const roadwayCost = (selectedRoadways.outbound?.price || 0) + (selectedRoadways.inbound?.price || 0);
+            const otherTransportCost = (selectedOtherTransport.outbound?.price || 0) + (selectedOtherTransport.inbound?.price || 0);
             // FIX: Explicitly type the accumulator ('sum') to prevent it from being inferred as 'unknown'.
             const accommodationCost = Object.values(selectedAccommodations).reduce((sum: number, acc: AccommodationInfo | null) => sum + (acc?.totalPrice || 0), 0);
-            const newTotal = baseCost + flightCost + railwayCost + accommodationCost;
+            const newTotal = baseCost + flightCost + railwayCost + roadwayCost + otherTransportCost + accommodationCost;
             setDynamicTotalCost(newTotal);
         }
-    }, [selectedFlights, selectedRailways, selectedAccommodations, baseCost]);
+    }, [selectedFlights, selectedRailways, selectedRoadways, selectedOtherTransport, selectedAccommodations, baseCost]);
 
     const handleSubmit = async (currentPrompt: string) => {
         if (!currentPrompt.trim()) return;
@@ -105,6 +109,16 @@ const App: React.FC = () => {
                  const cheapestOutboundRailway = initialItinerary.railways?.outboundOptions?.[0];
                  const cheapestInboundRailway = initialItinerary.railways?.inboundOptions?.[0];
                  setSelectedRailways({ outbound: cheapestOutboundRailway || null, inbound: cheapestInboundRailway || null });
+                
+                 // Initialize roadways
+                 const cheapestOutboundRoadway = initialItinerary.roadways?.outboundOptions?.[0];
+                 const cheapestInboundRoadway = initialItinerary.roadways?.inboundOptions?.[0];
+                 setSelectedRoadways({ outbound: cheapestOutboundRoadway || null, inbound: cheapestInboundRoadway || null });
+
+                 // Initialize other transport
+                 const cheapestOutboundOther = initialItinerary.otherTransport?.outboundOptions?.[0];
+                 const cheapestInboundOther = initialItinerary.otherTransport?.inboundOptions?.[0];
+                 setSelectedOtherTransport({ outbound: cheapestOutboundOther || null, inbound: cheapestInboundOther || null });
 
                 // Initialize accommodations
                 const initialSelections: { [location: string]: AccommodationInfo | null } = {};
@@ -118,9 +132,12 @@ const App: React.FC = () => {
                 // Calculate base cost (total cost - transport - accommodation)
                 const flightCost = (cheapestOutboundFlight?.price || 0) + (cheapestInboundFlight?.price || 0);
                 const railwayCost = (cheapestOutboundRailway?.price || 0) + (cheapestInboundRailway?.price || 0);
+                const roadwayCost = (cheapestOutboundRoadway?.price || 0) + (cheapestInboundRoadway?.price || 0);
+                const otherTransportCost = (cheapestOutboundOther?.price || 0) + (cheapestInboundOther?.price || 0);
+
                 // FIX: Explicitly type the accumulator ('sum') to prevent it from being inferred as 'unknown'.
                 const accommodationCost = Object.values(initialSelections).reduce((sum: number, acc: AccommodationInfo | null) => sum + (acc?.totalPrice || 0), 0);
-                const calculatedBaseCost = initialItinerary.totalEstimatedCost - flightCost - railwayCost - accommodationCost;
+                const calculatedBaseCost = initialItinerary.totalEstimatedCost - flightCost - railwayCost - roadwayCost - otherTransportCost - accommodationCost;
                 
                 setBaseCost(calculatedBaseCost);
                 setDynamicTotalCost(initialItinerary.totalEstimatedCost);
@@ -144,6 +161,8 @@ const App: React.FC = () => {
         setError(null);
         setSelectedFlights({ outbound: null, inbound: null });
         setSelectedRailways({ outbound: null, inbound: null });
+        setSelectedRoadways({ outbound: null, inbound: null });
+        setSelectedOtherTransport({ outbound: null, inbound: null });
         setSelectedAccommodations({});
         setDynamicTotalCost(null);
         setBaseCost(0);
@@ -167,6 +186,20 @@ const App: React.FC = () => {
             [direction]: railway,
         }));
     };
+
+    const handleRoadwaySelection = (roadway: RoadwayInfo, direction: 'outbound' | 'inbound') => {
+        setSelectedRoadways(prev => ({
+            ...prev,
+            [direction]: roadway,
+        }));
+    };
+
+    const handleOtherTransportSelection = (transport: OtherTransportInfo, direction: 'outbound' | 'inbound') => {
+        setSelectedOtherTransport(prev => ({
+            ...prev,
+            [direction]: transport,
+        }));
+    };
     
     const handleAccommodationSelection = (accommodation: AccommodationInfo, location: string) => {
         setSelectedAccommodations(prev => ({
@@ -177,7 +210,7 @@ const App: React.FC = () => {
 
     return (
         <div className="text-slate-300 min-h-screen font-sans">
-            <main className="container mx-auto px-4 py-8 max-w-4xl">
+            <main className="container mx-auto px-4 py-8 max-w-6xl">
                 <header className="text-center mb-8">
                     <SafariLogoIcon className="w-24 h-24 mx-auto mb-4 text-cyan-400" />
                     <h1 className="text-5xl font-extrabold text-white [text-shadow:1px_1px_3px_rgba(0,0,0,0.7)]">
@@ -208,6 +241,10 @@ const App: React.FC = () => {
                             onFlightSelect={handleFlightSelection}
                             selectedRailways={selectedRailways}
                             onRailwaySelect={handleRailwaySelection}
+                            selectedRoadways={selectedRoadways}
+                            onRoadwaySelect={handleRoadwaySelection}
+                            selectedOtherTransport={selectedOtherTransport}
+                            onOtherTransportSelect={handleOtherTransportSelection}
                             selectedAccommodations={selectedAccommodations}
                             onAccommodationSelect={handleAccommodationSelection}
                             dynamicTotalCost={dynamicTotalCost}

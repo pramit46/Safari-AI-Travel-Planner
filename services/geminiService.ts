@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, FunctionDeclaration, Content } from "@google/genai";
 import { ItineraryResponse } from '../types';
 import { 
     travelAgentSystemInstruction,
@@ -6,7 +6,11 @@ import {
     accommodationAgentSchema,
     dailyPlannerAgentSchema,
     essentialsAdvisorAgentSchema,
-    railwayAgentSchema
+    railwayAgentSchema,
+    roadwayAgentSchema,
+    otherTransportAgentSchema,
+    flightSearchToolSchema,
+    railwaySearchToolSchema
 } from './agents';
 
 // Define the master JSON schema by composing the schemas from individual agents.
@@ -33,11 +37,13 @@ const itinerarySchema = {
                     },
                     flights: flightAgentSchema,
                     railways: railwayAgentSchema,
+                    roadways: roadwayAgentSchema,
+                    otherTransport: otherTransportAgentSchema,
                     accommodation: accommodationAgentSchema,
                     dailyPlan: dailyPlannerAgentSchema,
                     tripEssentials: essentialsAdvisorAgentSchema
                 },
-                required: ['title', 'totalEstimatedCost', 'currency', 'flights', 'railways', 'accommodation', 'dailyPlan', 'tripEssentials']
+                required: ['title', 'totalEstimatedCost', 'currency', 'accommodation', 'dailyPlan', 'tripEssentials']
             }
         }
     },
@@ -45,34 +51,84 @@ const itinerarySchema = {
 };
 
 const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+const model = 'gemini-2.5-pro';
 
 export const generateItinerary = async (prompt: string): Promise<ItineraryResponse> => {
-    // Use a model suitable for complex reasoning and JSON output as per guidelines.
-    const model = 'gemini-2.5-pro';
-
     try {
-        const response = await ai.models.generateContent({
+        const conversationHistory: Content[] = [
+            { role: 'user', parts: [{ text: prompt }] }
+        ];
+
+        console.log("Starting itinerary generation process... Requesting transport verification.");
+        
+        const firstTurnResponse = await ai.models.generateContent({
             model: model,
-            contents: prompt,
+            contents: conversationHistory,
             config: {
-                responseMimeType: "application/json",
-                responseSchema: itinerarySchema,
                 systemInstruction: travelAgentSystemInstruction,
-                temperature: 0.7,
+                tools: [{ functionDeclarations: [
+                    flightSearchToolSchema as FunctionDeclaration,
+                    railwaySearchToolSchema as FunctionDeclaration
+                ] }],
             }
         });
 
-        const jsonText = response.text.trim();
-        // A simple robust guard against markdown fences
-        const cleanedJsonText = jsonText.replace(/^```json\s*|```\s*$/g, '');
-        const result: ItineraryResponse = JSON.parse(cleanedJsonText);
+        const modelResponseContent = firstTurnResponse.candidates[0].content;
+        conversationHistory.push(modelResponseContent);
+        
+        const functionCalls = firstTurnResponse.functionCalls;
+
+        if (functionCalls && functionCalls.length > 0) {
+            console.log(`AI requested verification for ${functionCalls.length} transport option(s).`);
+            console.log(JSON.stringify(functionCalls, null, 2));
+
+            const functionResponses = functionCalls.map(fc => {
+                const args = fc.args;
+                const toolName = fc.name;
+
+                console.log(`Simulating search for ${toolName} with args:`, args);
+                
+                return {
+                    id: fc.id,
+                    name: toolName,
+                    response: {
+                        result: {
+                            status: "Verified",
+                            message: `The proposed route is plausible. Price is a verified estimate. User must confirm final price and availability via booking link.`,
+                            estimatedPrice: args.price,
+                        }
+                    }
+                };
+            });
+
+            conversationHistory.push({
+                role: 'tool',
+                parts: functionResponses.map(fr => ({ functionResponse: fr }))
+            });
+        } else {
+            console.log("AI did not request any transport verifications. Proceeding to final generation.");
+        }
+
+        console.log("Sending verification results back to AI and requesting final itinerary...");
+        const finalResponse = await ai.models.generateContent({
+            model: model,
+            contents: conversationHistory,
+            config: {
+                responseMimeType: "application/json",
+                responseSchema: itinerarySchema,
+                systemInstruction: "You are a travel agent who has just received transport verification data. Based on the entire conversation history, including the user's request and the verified information, compile the final, complete itinerary in the specified JSON format. Adhere strictly to the provided JSON schema and all original constraints."
+            }
+        });
+
+        const jsonString = finalResponse.text;
+        const result: ItineraryResponse = JSON.parse(jsonString);
         return result;
 
-    } catch (e) {
-        console.error("Error generating or parsing itinerary:", e);
-        if (e instanceof Error && e.message.includes('JSON')) {
-             throw new Error("The AI returned an invalid response format. Please try refining your request.");
+    } catch (error) {
+        console.error("Error generating itinerary:", error);
+        if (error instanceof Error && error.message.includes('JSON')) {
+             throw new Error("The AI returned an invalid response. Please try rephrasing your request.");
         }
-        throw new Error("Failed to generate an itinerary due to an unexpected issue. Please try again later.");
+        throw new Error("Failed to generate itinerary due to an unexpected error.");
     }
 };

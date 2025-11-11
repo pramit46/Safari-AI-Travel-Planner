@@ -23,7 +23,7 @@ const TripInput: React.FC<TripInputProps> = ({ value, onChange, onSubmit, isLoad
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g., Plan my trip to Bhutan from Dec 15th to Dec 31st with a budget of $2000"
+                placeholder="e.g., Plan my trip to Bhutan from Dec 15th to Dec 31st with a budget of $2000. Suggest good food and place to visit."
                 className="w-full bg-slate-800 border border-slate-700 text-slate-200 rounded-xl p-4 pr-36 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-300 resize-none shadow-lg"
                 rows={3}
                 disabled={isLoading}

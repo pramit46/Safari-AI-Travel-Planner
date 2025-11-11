@@ -20,8 +20,9 @@ export interface FlightInfo {
   departureTime: string;
   arrivalTime: string;
   price: number;
-  bookingLink?: string;
+  bookingLink: string;
   seatType: 'Economy' | 'Business' | 'First';
+  verificationStatus?: 'Verified' | 'Not Found';
 }
 
 export interface RailwayInfo {
@@ -32,8 +33,33 @@ export interface RailwayInfo {
     departureTime: string;
     arrivalTime: string;
     price: number;
-    bookingLink?: string;
+    bookingLink: string;
     berthType: 'EC' | 'CC' | 'Sleeper' | '2AC' | '3AC' | '1AC' | 'General';
+    verificationStatus?: 'Verified' | 'Not Found';
+}
+
+export interface RoadwayInfo {
+  departurePoint: string;
+  arrivalPoint: string;
+  serviceProvider: string;
+  vehicleType: string;
+  departureTime: string;
+  arrivalTime: string;
+  price: number;
+  bookingLink: string;
+  seatType: string;
+}
+
+export interface OtherTransportInfo {
+  transportType: string; // e.g., "Ferry", "Private Transfer"
+  serviceProvider: string;
+  departurePoint: string;
+  arrivalPoint: string;
+  departureTime: string;
+  arrivalTime: string;
+  price: number;
+  bookingLink: string;
+  details?: string; // e.g., " scenic coastal route"
 }
 
 export interface AccommodationInfo {
@@ -70,6 +96,14 @@ export interface ItineraryOption {
   railways?: {
     outboundOptions: RailwayInfo[];
     inboundOptions: RailwayInfo[];
+  };
+  roadways?: {
+    outboundOptions: RoadwayInfo[];
+    inboundOptions: RoadwayInfo[];
+  };
+  otherTransport?: {
+    outboundOptions: OtherTransportInfo[];
+    inboundOptions: OtherTransportInfo[];
   };
   accommodation: LocationAccommodation[];
   dailyPlan: DailyPlan[];
