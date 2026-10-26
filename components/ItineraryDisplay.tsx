@@ -37,6 +37,19 @@ const getCurrencySymbol = (currencyCode: string): string => {
     return currencyMap[currencyCode.toUpperCase()] || `${currencyCode} `;
 };
 
+const formatTime = (timeStr?: string): string => {
+    if (!timeStr) return '';
+    try {
+        const d = new Date(timeStr);
+        if (!isNaN(d.getTime())) {
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        return timeStr;
+    } catch {
+        return timeStr;
+    }
+};
+
 const ActivityTypeIcon: React.FC<{ type: Activity['type'] }> = ({ type }) => {
     const iconClass = "w-5 h-5 text-cyan-400";
     switch (type) {
@@ -70,7 +83,7 @@ const FlightOptionCard: React.FC<{ flight: FlightInfo, isSelected: boolean, onSe
                     <span className="font-bold text-cyan-400">{flight.departureAirport}</span> → <span className="font-bold text-cyan-400">{flight.arrivalAirport}</span>
                     <span className="text-xs text-slate-500 ml-2">({flight.flightNumber})</span>
                 </p>
-                <p className="text-xs text-slate-500">{new Date(flight.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(flight.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                <p className="text-xs text-slate-500">{formatTime(flight.departureTime)} - {formatTime(flight.arrivalTime)}</p>
             </div>
              <div className="text-right flex-shrink-0">
                 <div className="flex items-center justify-end gap-1">
@@ -115,7 +128,7 @@ const RailwayOptionCard: React.FC<{ railway: RailwayInfo, isSelected: boolean, o
                     <span className="font-bold text-cyan-400">{railway.departureStation}</span> → <span className="font-bold text-cyan-400">{railway.arrivalStation}</span>
                     <span className="text-xs text-slate-500 ml-2">({railway.trainNumber})</span>
                 </p>
-                 <p className="text-xs text-slate-500">{new Date(railway.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(railway.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                 <p className="text-xs text-slate-500">{formatTime(railway.departureTime)} - {formatTime(railway.arrivalTime)}</p>
             </div>
             <div className="text-right flex-shrink-0">
                 <div className="flex items-center justify-end gap-1">
@@ -152,7 +165,7 @@ const RoadwayOptionCard: React.FC<{ roadway: RoadwayInfo, isSelected: boolean, o
                     <span className="font-bold text-cyan-400">{roadway.departurePoint}</span> → <span className="font-bold text-cyan-400">{roadway.arrivalPoint}</span>
                      <span className="text-xs text-slate-500 ml-2">({roadway.vehicleType})</span>
                 </p>
-                 <p className="text-xs text-slate-500">{new Date(roadway.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(roadway.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                 <p className="text-xs text-slate-500">{formatTime(roadway.departureTime)} - {formatTime(roadway.arrivalTime)}</p>
             </div>
             <div className="text-right flex-shrink-0">
                 <div className="flex items-center justify-end gap-1">
@@ -188,7 +201,7 @@ const OtherTransportOptionCard: React.FC<{ transport: OtherTransportInfo, isSele
                 <p className="text-sm text-slate-400 mt-1">
                     <span className="font-bold text-cyan-400">{transport.departurePoint}</span> → <span className="font-bold text-cyan-400">{transport.arrivalPoint}</span>
                 </p>
-                 <p className="text-xs text-slate-500">{new Date(transport.departureTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(transport.arrivalTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                 <p className="text-xs text-slate-500">{formatTime(transport.departureTime)} - {formatTime(transport.arrivalTime)}</p>
                  {transport.details && <p className="text-xs text-slate-400 mt-1 italic">{transport.details}</p>}
             </div>
             <div className="text-right flex-shrink-0">

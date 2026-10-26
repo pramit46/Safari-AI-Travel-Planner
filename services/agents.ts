@@ -1,4 +1,5 @@
-import { Type, FunctionDeclaration } from "@google/genai";
+import { Type } from "@google/genai";
+import type { FunctionDeclaration } from "@google/genai";
 
 export const travelAgentSystemInstruction = `You are a master travel agent orchestrator. Your primary role is to act as a project manager, delegating tasks to a team of specialized AI agents to build a comprehensive and personalized travel itinerary.
 

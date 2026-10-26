@@ -5,6 +5,7 @@ interface TripSuggestionsProps {
 }
 
 const suggestions = [
+    "Plan my trip to Bhutan from Delhi from Dec 15th to Dec 25th with a budget of ₹80,000.",
     "A 1-week cultural trip to Kyoto, Japan in spring for under $3000.",
     "A 10-day adventure tour in Costa Rica, focusing on wildlife and hiking.",
     "A romantic 4-day weekend getaway to Paris from London by train.",
